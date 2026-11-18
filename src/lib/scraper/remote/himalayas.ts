@@ -1,6 +1,7 @@
 import { APP_CONSTANTS } from "@/lib/constants";
 import type { JobDetails, ScraperResult } from "../types";
 import { feedDelay, fetchFeedJson, formatSalary, text } from "./http";
+import { compactRemoteLocation } from "./location";
 
 export const HIMALAYAS = "Himalayas";
 
@@ -41,10 +42,13 @@ export function mapHimalayasJob(job: HimalayasJob): JobDetails | null {
   const url = text(job.applicationLink) || text(job.guid);
   if (!title || !/^https?:\/\//i.test(url)) return null;
 
+  const location = locationOf(job.locationRestrictions);
+
   return {
     title,
     company: text(job.companyName) || "Unknown company",
-    location: locationOf(job.locationRestrictions),
+    location,
+    locationLabel: compactRemoteLocation(location),
     description: text(job.description) || text(job.excerpt),
     url,
     postedDate:

@@ -1,4 +1,7 @@
-import type { JobBoard } from "@/models/automation.model";
+import {
+  REMOTE_PROVIDER_LABEL,
+  type JobBoard,
+} from "@/models/automation.model";
 import { searchGreenhouseJobs } from "../greenhouse";
 import { searchLeverJobs } from "../lever";
 import { searchAshbyJobs } from "../ashby";
@@ -18,9 +21,10 @@ export const ATS_PROVIDERS: Partial<Record<JobBoard, AtsProvider>> = {
   ashby: { id: "ashby", label: "Ashby", search: searchAshbyJobs },
   remote: {
     id: "remote",
-    label: "Remote boards",
+    label: REMOTE_PROVIDER_LABEL,
     sourceNoun: "job boards",
     search: searchRemoteFeeds,
+    keywordSearched: true,
     locationMatches: remoteLocationMatches,
   },
 };

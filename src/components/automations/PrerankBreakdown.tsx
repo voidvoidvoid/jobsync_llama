@@ -41,9 +41,12 @@ export function PrerankBreakdown({
         </span>
       </div>
       <p className="text-xs text-muted-foreground">
-        Internal relevance score used to pick which jobs get AI-analyzed. Each
-        hit is weighted by how rare the term is across the board. Not an AI match
-        — compare it against the % above to gauge pre-rank accuracy.
+        Internal relevance score used to pick which jobs get AI-analyzed.{" "}
+        {components?.weighting === "count"
+          ? "Every matching term counts the same."
+          : "Each hit is weighted by how rare the term is across the board."}{" "}
+        Not an AI match — compare it against the % above to gauge pre-rank
+        accuracy.
       </p>
       {rows.map((row) => (
         <div key={row.label} className="text-xs">

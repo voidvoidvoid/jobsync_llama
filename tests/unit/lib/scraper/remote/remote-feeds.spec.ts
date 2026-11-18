@@ -158,6 +158,7 @@ describe("mapHimalayasJob", () => {
       title: "Data Engineer 1",
       company: "Company 1",
       location: "United States, Canada",
+      locationLabel: undefined,
       description: "<p>Spark and Airflow</p>",
       url: "https://himalayas.app/companies/c1/jobs/data-engineer-1",
       postedDate: new Date(1790000000 * 1000).toISOString(),
@@ -179,6 +180,20 @@ describe("mapHimalayasJob", () => {
       }),
     );
     expect(job?.location).toBe("United States, Canada");
+  });
+
+  it("saves a long country list as one short location, but filters on all of it", () => {
+    const countries = ["United States", "Canada", "Mexico", "Brazil", "Chile"];
+    const job = mapHimalayasJob(
+      himalayasJob(1, { locationRestrictions: countries }),
+    );
+    expect(job?.location).toBe(countries.join(", "));
+    expect(job?.locationLabel).toBe("Multiple countries");
+    expect(remoteLocationMatches(job!.location, ["Chile"])).toBe(true);
+  });
+
+  it("saves up to three countries as they are", () => {
+    expect(mapHimalayasJob(himalayasJob(1))?.locationLabel).toBeUndefined();
   });
 
   it("calls an unrestricted posting Worldwide", () => {
@@ -416,6 +431,25 @@ describe("searchRemoteFeeds", () => {
     expect(jobs[0].source).toBe("Himalayas");
   });
 
+  it("keeps a company's two openings with one title when one feed lists both", async () => {
+    stubFeeds({
+      himalayas: () =>
+        ok({
+          jobs: [
+            himalayasJob(1, { title: "Data Engineer", companyName: "Acme" }),
+            himalayasJob(2, { title: "Data Engineer", companyName: "Acme" }),
+          ],
+        }),
+    });
+
+    const { jobs } = await searchRemoteFeeds(
+      [{ name: "Himalayas", token: "himalayas" }],
+      { targetTitles: ["Data Engineer"], keywords: [] },
+    );
+
+    expect(jobs).toHaveLength(2);
+  });
+
   it("keeps one copy of a posting found under two search terms", async () => {
     stubFeeds({ himalayas: () => ok({ jobs: [himalayasJob(1)] }) });
 
@@ -469,6 +503,33 @@ describe("runAtsPipeline with the remote location test", () => {
       locationMatcher: remoteLocationMatches,
     });
     expect(result.funnel.located).toBe(2);
+  });
+
+  // Every result of a "Data Engineer" search has those words in its title. By
+  // rarity they are worth nothing, and the exact-title matches would be cut as
+  // "too weakly related" in favour of whatever mentions a rarer skill.
+  it("does not cut the best title matches from a keyword-search corpus", () => {
+    const corpus = [
+      ...Array.from({ length: 30 }, (_, i) => ({
+        ...job(`Data Engineer ${i}`, "Worldwide"),
+        description: "Pipelines",
+      })),
+      { ...job("Office Manager", "Worldwide"), description: "Spark joy daily" },
+    ];
+    const open = { ...config, strictLocation: false };
+
+    const weighted = runAtsPipeline(corpus, open, []);
+    const neutral = runAtsPipeline(corpus, open, [], { neutralWeights: true });
+
+    // Rarity weighting keeps only the one posting with the rare word
+    expect(weighted.funnel.relevant).toBe(1);
+    expect(weighted.toAnalyze[0].job.title).toBe("Office Manager");
+    // Neutral weighting keeps the title matches and ranks them first
+    expect(neutral.funnel.relevant).toBe(31);
+    expect(neutral.toAnalyze[0].job.title).toMatch(/^Data Engineer/);
+    // ...and says so, for the relevance breakdown shown on a discovered job
+    expect(neutral.toAnalyze[0].components.weighting).toBe("count");
+    expect(weighted.toAnalyze[0].components.weighting).toBeUndefined();
   });
 
   it("still uses the plain text match for company boards", () => {

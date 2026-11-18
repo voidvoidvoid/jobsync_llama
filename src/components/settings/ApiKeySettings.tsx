@@ -83,6 +83,10 @@ function ApiKeySettings() {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [ollamaConnected, setOllamaConnected] = useState<boolean | null>(null);
   const [ollamaChecking, setOllamaChecking] = useState(false);
+  const [llamacppConnected, setLlamacppConnected] = useState<boolean | null>(
+    null,
+  );
+  const [llamacppChecking, setLlamacppChecking] = useState(false);
 
   const recheckOllamaConnection = async () => {
     setOllamaChecking(true);
@@ -90,6 +94,31 @@ function ApiKeySettings() {
     setOllamaConnected(result.isConnected);
     setOllamaChecking(false);
   };
+
+  const recheckLlamacppConnection = async () => {
+    setLlamacppChecking(true);
+    const result = await checkOllamaConnection(AiProvider.LLAMACPP);
+    setLlamacppConnected(result.isConnected);
+    setLlamacppChecking(false);
+  };
+
+  // The local servers' status rows: which card shows one, and its state.
+  const localStatus = (providerId: string) =>
+    providerId === "ollama"
+      ? {
+          label: "Ollama",
+          connected: ollamaConnected,
+          checking: ollamaChecking,
+          recheck: recheckOllamaConnection,
+        }
+      : providerId === "llamacpp"
+        ? {
+            label: "The server",
+            connected: llamacppConnected,
+            checking: llamacppChecking,
+            recheck: recheckLlamacppConnection,
+          }
+        : null;
 
   const applyKeys = (
     result: Awaited<ReturnType<typeof getUserApiKeys>>,
@@ -123,6 +152,9 @@ function ApiKeySettings() {
     getUserSettings().then((result) => {
       if (result?.success && result.data?.settings?.ai?.provider === AiProvider.OLLAMA) {
         recheckOllamaConnection();
+      }
+      if (result?.success && result.data?.settings?.ai?.provider === AiProvider.LLAMACPP) {
+        recheckLlamacppConnection();
       }
     });
   }, []);
@@ -167,6 +199,10 @@ function ApiKeySettings() {
         setEditingProvider(null);
         setInputValue("");
         await fetchKeys();
+        // A new address or key changes the answer the status row is showing
+        if (provider.startsWith("llamacpp") && llamacppConnected !== null) {
+          recheckLlamacppConnection();
+        }
       } else {
         toastError(saveResult.message || "Failed to save API key", "Save failed");
       }
@@ -232,6 +268,7 @@ function ApiKeySettings() {
           const existingKey = getKeyForProvider(provider.id);
           const isEditing = editingProvider === provider.id;
           const isBaseUrl = isBaseUrlProvider(provider.id);
+          const status = localStatus(provider.id);
 
           return (
             <Card key={provider.id}>
@@ -260,33 +297,34 @@ function ApiKeySettings() {
                   )}
                 </div>
               </CardHeader>
-              {provider.id === "ollama" && (
+              {status && (
                 <div className="px-6 pb-3">
                   <div className="flex items-center gap-2">
-                    {ollamaChecking ? (
+                    {status.checking ? (
                       <div className="flex items-center gap-1 text-muted-foreground text-sm">
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
                         <span>Checking...</span>
                       </div>
-                    ) : ollamaConnected === true ? (
+                    ) : status.connected === true ? (
                       <div className="flex items-center gap-1 text-green-600 text-sm">
                         <CheckCircle className="h-3.5 w-3.5 shrink-0" />
-                        <span>Ollama is running</span>
+                        <span>{status.label} is running</span>
                       </div>
-                    ) : ollamaConnected === false ? (
+                    ) : status.connected === false ? (
                       <div className="flex items-center gap-1 text-red-600 text-sm">
                         <XCircle className="h-3.5 w-3.5 shrink-0" />
-                        <span>Ollama is not running</span>
+                        <span>{status.label} is not running</span>
                       </div>
                     ) : null}
                     <Button
                       size="sm"
                       variant="ghost"
                       className="h-6 w-6 p-0"
-                      onClick={recheckOllamaConnection}
-                      disabled={ollamaChecking}
+                      aria-label={`Check ${provider.name} connection`}
+                      onClick={status.recheck}
+                      disabled={status.checking}
                     >
-                      <RefreshCw className={`h-3.5 w-3.5 ${ollamaChecking ? "animate-spin" : ""}`} />
+                      <RefreshCw className={`h-3.5 w-3.5 ${status.checking ? "animate-spin" : ""}`} />
                     </Button>
                   </div>
                 </div>

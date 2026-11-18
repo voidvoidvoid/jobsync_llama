@@ -45,15 +45,20 @@ export async function searchRemoteFeeds(
 
   // One posting turns up under several search terms (same URL) and on several
   // feeds (different URLs, same title and company). Keep the first of each so
-  // the run's counts and term weights describe distinct jobs.
-  const seen = new Set<string>();
-  const addUnique = (batch: JobDetails[]) => {
+  // the run's counts and term weights describe distinct jobs. Title and
+  // company only count as "the same posting" across feeds: within one feed, a
+  // company's two openings with one title are two jobs.
+  const seenUrls = new Set<string>();
+  const feedOfPosting = new Map<string, string>();
+  const addUnique = (batch: JobDetails[], feed: string) => {
     for (const job of batch) {
       const byUrl = jobDedupeKey(job);
       const byPosting = jobDedupeKey({ title: job.title, company: job.company });
-      if (seen.has(byUrl) || seen.has(byPosting)) continue;
-      seen.add(byUrl);
-      seen.add(byPosting);
+      const firstFeed = feedOfPosting.get(byPosting);
+      if (seenUrls.has(byUrl)) continue;
+      if (firstFeed !== undefined && firstFeed !== feed) continue;
+      seenUrls.add(byUrl);
+      if (firstFeed === undefined) feedOfPosting.set(byPosting, feed);
       jobs.push(job);
     }
   };
@@ -61,7 +66,7 @@ export async function searchRemoteFeeds(
   settled.forEach((result, index) => {
     const token = feeds[index].token;
     if (result.status === "fulfilled") {
-      if (result.value.success) addUnique(result.value.data);
+      if (result.value.success) addUnique(result.value.data, token);
       else errors.push({ token, reason: errorReason(result.value.error) });
     } else {
       const reason =

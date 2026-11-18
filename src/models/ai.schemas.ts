@@ -54,6 +54,9 @@ export type PrerankComponents = {
   locScore: number;
   titleHits: string[]; // target-title tokens that matched
   keywordHits: string[]; // distinct keyword/skill terms that matched
+  // "count" when every hit weighed the same (keyword-searched sources, where
+  // rarity is meaningless). Absent = weighted by rarity across the board.
+  weighting?: "count";
 };
 
 // Persisted shape stored in Job.matchData (JSON string).

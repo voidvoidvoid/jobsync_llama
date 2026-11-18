@@ -66,6 +66,39 @@ describe("ApiKeySettings — Ollama connection probe", () => {
   });
 });
 
+describe("ApiKeySettings — llama.cpp", () => {
+  beforeEach(() => {
+    getUserApiKeys.mockResolvedValue({ success: true, data: [] });
+    getDefaultOllamaBaseUrl.mockResolvedValue("http://127.0.0.1:11434");
+    checkOllamaConnection.mockReset();
+    checkOllamaConnection.mockResolvedValue({ isConnected: true });
+  });
+
+  it("lists the base URL card followed by its optional API key card", async () => {
+    getUserSettings.mockResolvedValue(settingsFor(AiProvider.OPENROUTER));
+
+    render(<ApiKeySettings />);
+
+    const url = await screen.findByText("llama.cpp (OpenAI-compatible)");
+    const key = screen.getByText("llama.cpp API key (optional)");
+    expect(
+      url.compareDocumentPosition(key) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  it("probes the server when llama.cpp is the selected provider", async () => {
+    getUserSettings.mockResolvedValue(settingsFor(AiProvider.LLAMACPP));
+
+    render(<ApiKeySettings />);
+
+    await waitFor(() =>
+      expect(screen.getByText("The server is running")).toBeInTheDocument(),
+    );
+    expect(checkOllamaConnection).toHaveBeenCalledWith(AiProvider.LLAMACPP);
+    expect(checkOllamaConnection).not.toHaveBeenCalledWith(AiProvider.OLLAMA);
+  });
+});
+
 describe("ApiKeySettings — clearing a stored base URL", () => {
   beforeEach(() => {
     getUserApiKeys.mockResolvedValue({

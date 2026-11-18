@@ -135,6 +135,10 @@ export function isRemoteBoard(board: string): boolean {
   return board === "remote";
 }
 
+// The remote board's provider label, as stored in "board" notifications. The
+// notification list keys its wording on it (a feed is not a company's board).
+export const REMOTE_PROVIDER_LABEL = "Remote boards";
+
 // Boards that used to exist and were removed. Their Automation rows stay in
 // the database; the UI marks them retired and only offers pause/delete.
 export const RETIRED_BOARDS = ["jsearch"];

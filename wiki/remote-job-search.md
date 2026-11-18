@@ -29,6 +29,8 @@ With no titles and no keywords the boards are only asked for their newest postin
 
 The skills on your matching resume still count toward ranking, as they do for company boards, but they are not sent to the boards as searches.
 
+Ranking is simpler here than on company boards. There, a rare word outweighs a common one; here every matching title word or keyword counts the same, because results that were fetched by searching for your terms all contain them. The more of your terms a listing matches, the higher it ranks.
+
 ## How do I keep only jobs I can take from where I live?
 
 A remote role often still requires you to live in certain countries, and that is what the boards report as its location. Under **Where you can work from**, add the countries or regions that apply to you — `United States`, `Canada`, `Europe` — and turn on **Only show jobs open to these locations**. Roles restricted to somewhere else are then dropped before ranking. Roles open worldwide always pass.

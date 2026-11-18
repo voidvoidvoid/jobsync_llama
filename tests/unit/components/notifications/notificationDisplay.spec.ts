@@ -82,6 +82,23 @@ describe("describeNotification", () => {
     });
   });
 
+  // A remote job board is a feed: no company to have "moved ATS", and no
+  // watchlist behind the edit link.
+  it("board row for a remote job board: plain 404 copy and its own edit link", () => {
+    const d = describeNotification(
+      item({
+        kind: "board",
+        payload: { provider: "Remote boards", token: "jobicy", companyName: "Jobicy", code: "not_found", reason: "Jobicy returned 404" },
+      }),
+    );
+    expect(d.lead).toBe("Remote boards · Jobicy");
+    expect(d.detail).toBe(" returned 404.");
+    expect(d.link).toEqual({
+      label: "Edit job boards",
+      href: "/dashboard/automations/a-1?edit=1",
+    });
+  });
+
   it("board row: http_error names the status instead of the generic copy", () => {
     const d = describeNotification(
       item({

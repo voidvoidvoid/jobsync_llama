@@ -40,6 +40,9 @@ export function runAtsPipeline(
     k?: number;
     cap?: number;
     corpus?: JobDetails[];
+    // Count every term hit equally instead of weighting by rarity in the
+    // corpus. For corpora that are themselves keyword-search results.
+    neutralWeights?: boolean;
     // Board-specific strict-location test; defaults to locationMatches
     locationMatcher?: (jobLocation: string, wanted: string[]) => boolean;
   },
@@ -51,7 +54,9 @@ export function runAtsPipeline(
 
   // Term-rarity weights are derived from the full fetched corpus (pre-dedup) so
   // they stay stable on steady-state runs where few new jobs remain.
-  const idf = buildIdf(options?.corpus ?? fetchedJobs);
+  const idf = options?.neutralWeights
+    ? () => 1
+    : buildIdf(options?.corpus ?? fetchedJobs);
 
   const gateActive = config.strictLocation && config.locations.length > 0;
   const matchesLocation = options?.locationMatcher ?? locationMatches;
@@ -72,7 +77,13 @@ export function runAtsPipeline(
       config.locations,
       idf,
     );
-    return { job, score, components };
+    return {
+      job,
+      score,
+      components: options?.neutralWeights
+        ? { ...components, weighting: "count" as const }
+        : components,
+    };
   });
 
   const floorSurvivors = scored

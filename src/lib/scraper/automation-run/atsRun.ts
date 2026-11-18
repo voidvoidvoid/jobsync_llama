@@ -42,7 +42,7 @@ export async function runAtsRun(
     automationLogger.endRun(automation.id);
     return await finalizeRun(runId, {
       status: "failed",
-      errorMessage: "no_companies",
+      errorMessage: provider.id === "remote" ? "no_job_boards" : "no_companies",
       jobsSearched: 0,
       jobsDeduplicated: 0,
       jobsProcessed: 0,
@@ -163,6 +163,7 @@ export async function runAtsRun(
       corpus: jobs,
       k: config.topK,
       locationMatcher: provider.locationMatches,
+      neutralWeights: provider.keywordSearched,
     });
 
     if (config.strictLocation && config.locations.length > 0) {
@@ -224,6 +225,7 @@ export async function runAtsRun(
         corpus: jobs,
         k: config.topK,
         locationMatcher: provider.locationMatches,
+        neutralWeights: provider.keywordSearched,
       });
       let reason: string;
       if (beforeDedup.funnel.relevant > 0) {

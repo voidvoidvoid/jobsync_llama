@@ -34,7 +34,8 @@ import {
 } from "@/actions/agentChat.actions";
 import { getUserSettings } from "@/actions/userSettings.actions";
 import { checkOllamaConnection } from "@/utils/ai.utils";
-import { AiProvider } from "@/models/ai.model";
+import { AiProvider, isLocalAiProvider } from "@/models/ai.model";
+import { AI_PROVIDER_LABELS } from "@/models/aiUsage.model";
 import {
   AGENT_NESTED_STREAM_PART_TYPE,
   isNestedTool,
@@ -255,7 +256,7 @@ function useAgentChatValue(initialMessages: UIMessage[]) {
       return;
     }
 
-    if (provider !== AiProvider.OLLAMA) {
+    if (!isLocalAiProvider(provider)) {
       setPreflight({ checked: true, ok: true, provider, model: ai.model });
       return;
     }
@@ -265,7 +266,8 @@ function useAgentChatValue(initialMessages: UIMessage[]) {
       ok: result.isConnected,
       error: result.isConnected
         ? undefined
-        : (result.error ?? "Ollama is not reachable."),
+        : (result.error ??
+          `${AI_PROVIDER_LABELS[provider] ?? provider} is not reachable.`),
       provider,
       model: ai.model,
     });

@@ -25,6 +25,11 @@ export interface AtsProvider {
     jobs: JobDetails[];
     errors: { token: string; reason: string }[];
   }>;
+  // True when `search` returns keyword-search results rather than whole
+  // boards. Rarity weighting is then switched off: in a corpus built from the
+  // user's own search terms those terms are the commonest words, so weighting
+  // by rarity would score the best matches lowest.
+  keywordSearched?: boolean;
   // Replaces the default strict-location test (see rank.ts locationMatches).
   locationMatches?: (jobLocation: string, wanted: string[]) => boolean;
 }

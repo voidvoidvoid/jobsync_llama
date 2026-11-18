@@ -123,7 +123,9 @@ function AiSettings() {
             if (!connResult.isConnected) {
               if (!cancelled) {
                 setFetchedModels(fallback);
-                setConnectionError(connResult.error || "Ollama is not reachable.");
+                setConnectionError(
+                  connResult.error || `${entry.displayName} is not reachable.`,
+                );
               }
               return;
             }

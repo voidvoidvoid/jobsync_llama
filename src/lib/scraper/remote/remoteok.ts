@@ -1,6 +1,7 @@
 import { APP_CONSTANTS } from "@/lib/constants";
 import type { JobDetails, ScraperResult } from "../types";
 import { fetchFeedJson, formatSalary, text } from "./http";
+import { compactRemoteLocation } from "./location";
 
 export const REMOTEOK = "Remote OK";
 
@@ -30,6 +31,7 @@ export function mapRemoteOkJob(job: RemoteOkJob): JobDetails | null {
     title,
     company: text(job.company) || "Unknown company",
     location: location || "Worldwide",
+    locationLabel: compactRemoteLocation(location),
     description: text(job.description),
     url,
     postedDate:

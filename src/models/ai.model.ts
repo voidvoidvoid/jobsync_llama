@@ -50,3 +50,9 @@ export const defaultModel: AiModel = {
   provider: AiProvider.OLLAMA,
   model: OllamaModel.QWEN3_5_9B,
 };
+
+// Providers that run on the user's own hardware. They can be down, so the AI
+// surfaces check them before use instead of failing mid-request.
+export function isLocalAiProvider(provider: string | undefined): boolean {
+  return provider === AiProvider.OLLAMA || provider === AiProvider.LLAMACPP;
+}

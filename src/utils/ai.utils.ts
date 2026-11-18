@@ -11,10 +11,43 @@ export interface OllamaConnectionResult {
   error?: string;
 }
 
-// Checks if the Ollama service is reachable
+// llama.cpp (or another OpenAI-compatible server): reachable when its model
+// list loads. The route's own message is kept, since it tells a server that is
+// down apart from one that rejected the API key.
+async function checkLlamacppConnection(): Promise<OllamaConnectionResult> {
+  try {
+    const response = await fetch("/api/ai/llamacpp/models", {
+      signal: AbortSignal.timeout(
+        // The route itself waits this long for the server before answering
+        APP_CONSTANTS.AI_OLLAMA_LIST_TIMEOUT_MS + 2_000,
+      ),
+    });
+    if (response.ok) return { isConnected: true };
+    const data = await response.json().catch(() => null);
+    return {
+      isConnected: false,
+      error:
+        (typeof data?.error === "string" && data.error) ||
+        "The llama.cpp server is not responding. Please make sure it is running.",
+    };
+  } catch (error) {
+    console.warn("llama.cpp connection check failed:", error);
+    return {
+      isConnected: false,
+      error:
+        "Cannot connect to the llama.cpp server. Please make sure it is running.",
+    };
+  }
+}
+
+// Checks if a local AI service (Ollama, llama.cpp) is reachable. Hosted
+// providers are always reported as connected. The name predates llama.cpp.
 export const checkOllamaConnection = async (
   provider: AiProvider,
 ): Promise<OllamaConnectionResult> => {
+  if (provider === AiProvider.LLAMACPP) {
+    return checkLlamacppConnection();
+  }
   if (provider !== AiProvider.OLLAMA) {
     return { isConnected: true };
   }

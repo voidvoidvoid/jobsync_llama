@@ -2,6 +2,7 @@ import { APP_CONSTANTS } from "@/lib/constants";
 import type { JobDetails, ScraperResult } from "../types";
 import { decodeHtml } from "../html";
 import { feedDelay, fetchFeedJson, formatSalary, text } from "./http";
+import { compactRemoteLocation } from "./location";
 
 export const JOBICY = "Jobicy";
 
@@ -29,10 +30,13 @@ export function mapJobicyJob(job: JobicyJob): JobDetails | null {
   const posted = text(job.pubDate);
   const type = Array.isArray(job.jobType) ? job.jobType[0] : job.jobType;
 
+  const location = decodeHtml(text(job.jobGeo)) || "Anywhere";
+
   return {
     title,
     company: decodeHtml(text(job.companyName)) || "Unknown company",
-    location: decodeHtml(text(job.jobGeo)) || "Anywhere",
+    location,
+    locationLabel: compactRemoteLocation(location),
     description: text(job.jobDescription) || text(job.jobExcerpt),
     url, // the canonical Jobicy page, which Jobicy asks to be kept
     postedDate:

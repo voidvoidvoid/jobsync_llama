@@ -35,3 +35,14 @@ export function remoteLocationMatches(
   if (!loc || loc === "remote" || OPEN_LOCATION.test(loc)) return true;
   return expand(wanted).some((term) => termInText(loc, term));
 }
+
+// What to save as a job's location. Feeds list every country a role is open
+// to, sometimes dozens; saved verbatim, each combination would become its own
+// entry in the Locations list. Up to three places are kept as they are.
+export function compactRemoteLocation(location: string): string | undefined {
+  const places = location
+    .split(",")
+    .map((place) => place.trim())
+    .filter(Boolean);
+  return places.length > 3 ? "Multiple countries" : undefined;
+}

@@ -406,6 +406,34 @@ describe("AgentChatProvider", () => {
     expect(screen.getByTestId("state").textContent).toMatch(/false$/);
   });
 
+  it("preflights llama.cpp on open and reports a failure", async () => {
+    (getUserSettings as any).mockResolvedValue({
+      success: true,
+      data: { settings: { ai: { provider: "llamacpp", model: "qwen3-14b" } } },
+    });
+    (checkOllamaConnection as any).mockResolvedValue({ isConnected: false });
+    setup();
+    await act(async () => {
+      await userEvent.click(screen.getByText("open"));
+    });
+    expect(checkOllamaConnection).toHaveBeenCalledWith("llamacpp");
+    expect(screen.getByTestId("state").textContent).toMatch(/false$/);
+  });
+
+  it("does not probe a hosted provider", async () => {
+    (getUserSettings as any).mockResolvedValue({
+      success: true,
+      data: { settings: { ai: { provider: "openai", model: "gpt-4o" } } },
+    });
+    (checkOllamaConnection as any).mockClear();
+    setup();
+    await act(async () => {
+      await userEvent.click(screen.getByText("open"));
+    });
+    expect(checkOllamaConnection).not.toHaveBeenCalled();
+    expect(screen.getByTestId("state").textContent).toMatch(/true$/);
+  });
+
   it("fails the preflight when no model is configured, without probing Ollama", async () => {
     (getUserSettings as any).mockResolvedValue({
       success: true,

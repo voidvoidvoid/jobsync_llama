@@ -22,6 +22,9 @@ describe("describeRunFailure", () => {
   it("translates the runner's error codes", () => {
     expect(describeRunFailure("resume_missing", null)).toMatch(/resume/i);
     expect(describeRunFailure("no_companies", null)).toMatch(/watchlist/i);
+    expect(describeRunFailure("no_job_boards", null)).toBe(
+      "No job boards are switched on.",
+    );
     expect(describeRunFailure(null, "source_removed")).toMatch(/removed/i);
   });
 

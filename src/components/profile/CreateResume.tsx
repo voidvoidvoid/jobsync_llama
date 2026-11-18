@@ -26,7 +26,7 @@ import { Input } from "../ui/input";
 import { Switch } from "../ui/switch";
 import { Resume } from "@/models/profile.model";
 import { toastSuccess, toastError } from "@/lib/toast";
-import { AiModel, AiProvider, defaultModel } from "@/models/ai.model";
+import { AiModel, defaultModel, isLocalAiProvider } from "@/models/ai.model";
 import { getUserSettings } from "@/actions/userSettings.actions";
 import { checkOllamaConnection } from "@/utils/ai.utils";
 import { useRouter } from "next/navigation";
@@ -111,8 +111,8 @@ function CreateResume({
           };
           setSelectedModel(model);
 
-          if (model.provider === AiProvider.OLLAMA) {
-            const result = await checkOllamaConnection(AiProvider.OLLAMA);
+          if (isLocalAiProvider(model.provider)) {
+            const result = await checkOllamaConnection(model.provider);
             setAiAvailable(result.isConnected);
           } else {
             setAiAvailable(true);

@@ -5,7 +5,8 @@ import { toastError } from "@/lib/toast";
 import { deleteResumeById } from "@/actions/profile.actions";
 import { resolveImportCard } from "@/actions/resumeImport.actions";
 import { getUserSettings } from "@/actions/userSettings.actions";
-import { AiModel, defaultModel } from "@/models/ai.model";
+import { AiModel, defaultModel, isLocalAiProvider } from "@/models/ai.model";
+import { AI_PROVIDER_LABELS } from "@/models/aiUsage.model";
 import type { Resume } from "@/models/profile.model";
 import { checkOllamaConnection } from "@/utils/ai.utils";
 import { streamResumeImport } from "@/utils/resumeImportStream.utils";
@@ -159,14 +160,15 @@ export function useResumeImport(resume: Resume) {
           };
           setAiModel(model);
           setAiReady(true);
-          if (model.provider === "ollama") {
+          if (isLocalAiProvider(model.provider)) {
             setOllamaConnected(null);
             setConnectionError("");
             checkOllamaConnection(model.provider).then((result) => {
               setOllamaConnected(result.isConnected);
               if (!result.isConnected) {
                 setConnectionError(
-                  result.error || "Ollama is not reachable.",
+                  result.error ||
+                    `${AI_PROVIDER_LABELS[model.provider] ?? model.provider} is not reachable.`,
                 );
               }
             });

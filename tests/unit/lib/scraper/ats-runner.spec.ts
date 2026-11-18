@@ -253,6 +253,35 @@ describe("runAutomation (lever)", () => {
       expect(result.jobsSaved).toBe(1);
     });
 
+    it("saves a long country list as one short location", async () => {
+      (prisma.location.findUnique as any).mockResolvedValue(null);
+      (prisma.location.create as any).mockResolvedValue({ id: "loc-new" });
+      (searchRemoteFeeds as any).mockResolvedValue({
+        jobs: [
+          makeJob("Frontend Engineer", "React", {
+            location: "United States, Canada, Mexico, Brazil",
+            locationLabel: "Multiple countries",
+          }),
+        ],
+        errors: [],
+      });
+
+      await runAutomation(remoteAutomation);
+
+      const created = (prisma.location.create as any).mock.calls[0][0];
+      expect(created.data.label).toBe("Multiple countries");
+    });
+
+    it("fails with its own reason when no job board is switched on", async () => {
+      const result = await runAutomation({
+        ...remoteAutomation,
+        sourceConfig: JSON.stringify({ remote: { companies: [] } }),
+      });
+
+      expect(result.status).toBe("failed");
+      expect(result.errorMessage).toBe("no_job_boards");
+    });
+
     it("completes with errors when one feed is down", async () => {
       (searchRemoteFeeds as any).mockResolvedValue({
         jobs: [makeJob("Frontend Engineer", "React", { location: "Worldwide" })],

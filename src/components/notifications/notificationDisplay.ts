@@ -6,6 +6,8 @@ import type {
   RunPayload,
 } from "@/models/notification.model";
 
+import { REMOTE_PROVIDER_LABEL } from "@/models/automation.model";
+
 const BOARD_COPY: Record<BoardErrorCode, string> = {
   not_found: "returned 404 — the company may have moved ATS.",
   timeout: "did not respond.",
@@ -35,13 +37,21 @@ export function describeNotification(n: NotificationItem) {
         : "";
     // The status is the one detail the generic http_error copy would lose.
     const status = p.code === "http_error" ? p.reason.match(/returned (\d{3})/)?.[1] : undefined;
+    // A remote job board is a feed, not one company's board: a 404 there is
+    // not the company moving ATS, and there is no watchlist to edit.
+    const isFeed = p.provider === REMOTE_PROVIDER_LABEL;
+    const copy =
+      isFeed && p.code === "not_found" ? "returned 404." : BOARD_COPY[p.code];
     return {
       icon: "warn" as const,
       title: "Job board unreachable",
       lead: `${p.provider} · ${p.companyName}`,
-      detail: ` ${status ? `returned ${status}.` : BOARD_COPY[p.code]}${repeat}`,
+      detail: ` ${status ? `returned ${status}.` : copy}${repeat}`,
       hint: p.reason,
-      link: { label: "Edit watchlist", href: `${base}?edit=1` },
+      link: {
+        label: isFeed ? "Edit job boards" : "Edit watchlist",
+        href: `${base}?edit=1`,
+      },
     };
   }
 

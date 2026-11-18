@@ -34,7 +34,7 @@ export async function persistDiscoveredJob(
   const scrapedJob: ScrapedJobData = {
     title: job.title,
     company: job.company,
-    location: job.location,
+    location: job.locationLabel ?? job.location,
     description: job.description,
     sourceUrl: normalizeJobUrl(job.url),
     sourceBoard: job.source ?? automation.jobBoard,
