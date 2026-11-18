@@ -153,6 +153,10 @@ export const APP_CONSTANTS = {
   JOBICY_COUNT: 100,
   JOBICY_MAX_TERMS: 3, // Jobicy asks for a few requests a day
   REMOTEOK_API_URL: "https://remoteok.com/api",
+  WWR_RSS_URL: "https://weworkremotely.com/remote-jobs.rss",
+  WORKINGNOMADS_API_URL: "https://www.workingnomads.com/api/exposed_jobs/",
+  ARBEITNOW_API_URL: "https://www.arbeitnow.com/api/job-board-api",
+  ARBEITNOW_MAX_PAGES: 2, // 100 remote jobs a page, newest first
   REMOTE_FEED_MAX_TERMS: 6, // search terms sent to a feed per run
   REMOTE_FEED_REQUEST_DELAY_MS: 400, // pause between requests to one feed
   REMOTE_FEED_TIMEOUT_MS: 25_000, // per request

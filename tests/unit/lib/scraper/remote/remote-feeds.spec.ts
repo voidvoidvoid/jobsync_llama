@@ -23,6 +23,18 @@ import {
   fetchRemoteOkJobs,
   mapRemoteOkJob,
 } from "@/lib/scraper/remote/remoteok";
+import {
+  fetchWwrJobs,
+  mapWwrItem,
+} from "@/lib/scraper/remote/weworkremotely";
+import {
+  fetchWorkingNomadsJobs,
+  mapWorkingNomadsJob,
+} from "@/lib/scraper/remote/workingnomads";
+import {
+  fetchArbeitnowJobs,
+  mapArbeitnowJob,
+} from "@/lib/scraper/remote/arbeitnow";
 import { runAtsPipeline } from "@/lib/scraper/ats/pipeline";
 
 const himalayasJob = (n: number, extra = {}) => ({
@@ -66,10 +78,56 @@ const remoteOkJob = (n: number, extra = {}) => ({
   ...extra,
 });
 
+const wwrItem = (n: number, extra: Record<string, string> = {}) => {
+  const fields: Record<string, string> = {
+    title: `Acme ${n}: Senior Backend Engineer`,
+    region: "Anywhere in the World",
+    category: "Back-End Programming",
+    type: "Full-Time",
+    description: "&lt;p&gt;Go &amp;amp; PostgreSQL&lt;/p&gt;",
+    pubDate: "Tue, 17 Nov 2026 13:11:19 +0000",
+    guid: `https://weworkremotely.com/remote-jobs/acme-${n}-senior-backend-engineer`,
+    link: `https://weworkremotely.com/remote-jobs/acme-${n}-senior-backend-engineer`,
+    ...extra,
+  };
+  return `<item>${Object.entries(fields)
+    .map(([tag, value]) => `<${tag}>${value}</${tag}>`)
+    .join("\n")}</item>`;
+};
+const wwrFeed = (...items: string[]) =>
+  `<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>We Work Remotely</title>${items.join("")}</channel></rss>`;
+
+const workingNomadsJob = (n: number, extra = {}) => ({
+  url: `https://www.workingnomads.com/jobs/data-engineer-${n}`,
+  title: `Data Engineer ${n}`,
+  description: "<p>Airflow</p>",
+  company_name: `Nomad Co ${n}`,
+  category_name: "Development",
+  tags: "python,airflow",
+  location: "USA",
+  pub_date: "2026-11-15T10:00:00-05:00",
+  ...extra,
+});
+
+const arbeitnowJob = (n: number, extra = {}) => ({
+  slug: `data-engineer-${n}`,
+  company_name: `Berlin Co ${n}`,
+  title: `Data Engineer ${n}`,
+  description: "<p>dbt</p>",
+  remote: true,
+  url: `https://www.arbeitnow.com/jobs/companies/berlin-co/data-engineer-${n}`,
+  tags: ["data"],
+  job_types: ["full time"],
+  location: "Berlin",
+  created_at: 1790000000,
+  ...extra,
+});
+
 const ok = (body: unknown) => ({
   ok: true,
   status: 200,
   json: async () => body,
+  text: async () => String(body),
 });
 
 // Routes a stubbed fetch by host so the feeds can be read in parallel.
@@ -77,6 +135,9 @@ function stubFeeds(handlers: {
   himalayas?: (url: URL) => unknown;
   jobicy?: (url: URL) => unknown;
   remoteok?: (url: URL) => unknown;
+  weworkremotely?: (url: URL) => unknown;
+  workingnomads?: (url: URL) => unknown;
+  arbeitnow?: (url: URL) => unknown;
 }) {
   const fetchMock = vi.fn(async (input: string) => {
     const url = new URL(input);
@@ -86,6 +147,12 @@ function stubFeeds(handlers: {
       return handlers.jobicy(url);
     if (url.hostname === "remoteok.com" && handlers.remoteok)
       return handlers.remoteok(url);
+    if (url.hostname === "weworkremotely.com" && handlers.weworkremotely)
+      return handlers.weworkremotely(url);
+    if (url.hostname === "www.workingnomads.com" && handlers.workingnomads)
+      return handlers.workingnomads(url);
+    if (url.hostname === "www.arbeitnow.com" && handlers.arbeitnow)
+      return handlers.arbeitnow(url);
     throw new TypeError("fetch failed");
   });
   global.fetch = fetchMock as never;
@@ -380,6 +447,171 @@ describe("fetchRemoteOkJobs", () => {
   });
 });
 
+describe("We Work Remotely", () => {
+  it("splits the company from the title and decodes the description", () => {
+    expect(mapWwrItem(wwrItem(1))).toEqual({
+      title: "Senior Backend Engineer",
+      company: "Acme 1",
+      location: "Anywhere in the World",
+      locationLabel: undefined,
+      description: "<p>Go &amp; PostgreSQL</p>",
+      url: "https://weworkremotely.com/remote-jobs/acme-1-senior-backend-engineer",
+      postedDate: "2026-11-17T13:11:19.000Z",
+      employmentType: "Full-Time",
+      isRemote: true,
+      workplaceType: "REMOTE",
+      source: "We Work Remotely",
+    });
+  });
+
+  it("reads CDATA sections literally", () => {
+    const job = mapWwrItem(
+      wwrItem(1, {
+        title: "<![CDATA[R&D Labs: Staff Engineer: Platform]]>",
+        description: "<![CDATA[<p>Rust & Go</p>]]>",
+      }),
+    );
+    expect(job).toMatchObject({
+      company: "R&D Labs",
+      title: "Staff Engineer: Platform",
+      description: "<p>Rust & Go</p>",
+    });
+  });
+
+  it("keeps both region and country for the location test", () => {
+    const job = mapWwrItem(
+      wwrItem(1, { region: "USA Only", country: "United States" }),
+    );
+    expect(job?.location).toBe("USA Only, United States");
+    expect(remoteLocationMatches(job!.location, ["US"])).toBe(true);
+    expect(remoteLocationMatches(job!.location, ["Germany"])).toBe(false);
+  });
+
+  it("treats a title with no company prefix as all title", () => {
+    expect(mapWwrItem(wwrItem(1, { title: "Support Lead" }))).toMatchObject({
+      title: "Support Lead",
+      company: "Unknown company",
+    });
+  });
+
+  it("reads every item of the public RSS feed in one request", async () => {
+    const fetchMock = stubFeeds({
+      weworkremotely: () => ok(wwrFeed(wwrItem(1), wwrItem(2))),
+    });
+
+    const result = await fetchWwrJobs();
+
+    const urls = urlsFor(fetchMock, "weworkremotely.com");
+    expect(urls.map((u: URL) => u.pathname)).toEqual(["/remote-jobs.rss"]);
+    expect(result.success && result.data.map((j) => j.company)).toEqual([
+      "Acme 1",
+      "Acme 2",
+    ]);
+  });
+
+  it("rejects a response that is not a feed", async () => {
+    stubFeeds({ weworkremotely: () => ok("<html>Just a moment...</html>") });
+
+    const result = await fetchWwrJobs();
+
+    expect(!result.success && result.error).toMatchObject({ type: "parse" });
+  });
+});
+
+describe("Working Nomads", () => {
+  it("maps a posting and keeps its Working Nomads link", () => {
+    expect(mapWorkingNomadsJob(workingNomadsJob(4))).toEqual({
+      title: "Data Engineer 4",
+      company: "Nomad Co 4",
+      location: "USA",
+      locationLabel: undefined,
+      description: "<p>Airflow</p>",
+      url: "https://www.workingnomads.com/jobs/data-engineer-4",
+      postedDate: "2026-11-15T15:00:00.000Z",
+      isRemote: true,
+      workplaceType: "REMOTE",
+      source: "Working Nomads",
+    });
+  });
+
+  it("reads the whole list in one request", async () => {
+    const fetchMock = stubFeeds({
+      workingnomads: () => ok([workingNomadsJob(1), workingNomadsJob(2), null]),
+    });
+
+    const result = await fetchWorkingNomadsJobs();
+
+    const urls = urlsFor(fetchMock, "www.workingnomads.com");
+    expect(urls.map((u: URL) => u.pathname)).toEqual(["/api/exposed_jobs/"]);
+    expect(result.success && result.data).toHaveLength(2);
+  });
+
+  it("rejects a body that is not a list", async () => {
+    stubFeeds({ workingnomads: () => ok({ detail: "nope" }) });
+
+    const result = await fetchWorkingNomadsJobs();
+
+    expect(!result.success && result.error).toMatchObject({ type: "parse" });
+  });
+});
+
+describe("Arbeitnow", () => {
+  it("maps a remote posting, with the employer's city as its location", () => {
+    expect(mapArbeitnowJob(arbeitnowJob(7))).toEqual({
+      title: "Data Engineer 7",
+      company: "Berlin Co 7",
+      location: "Berlin",
+      locationLabel: undefined,
+      description: "<p>dbt</p>",
+      url: "https://www.arbeitnow.com/jobs/companies/berlin-co/data-engineer-7",
+      postedDate: new Date(1790000000 * 1000).toISOString(),
+      employmentType: "full time",
+      isRemote: true,
+      workplaceType: "REMOTE",
+      source: "Arbeitnow",
+    });
+  });
+
+  it("drops a posting that is not flagged remote", () => {
+    expect(mapArbeitnowJob(arbeitnowJob(1, { remote: false }))).toBeNull();
+  });
+
+  it("asks for remote postings and follows the next page", async () => {
+    const fetchMock = stubFeeds({
+      arbeitnow: (url) =>
+        ok({
+          data: [arbeitnowJob(Number(url.searchParams.get("page")))],
+          links: { next: "https://www.arbeitnow.com/api/job-board-api?page=99" },
+        }),
+    });
+
+    const result = await fetchArbeitnowJobs();
+
+    const urls = urlsFor(fetchMock, "www.arbeitnow.com");
+    expect(urls.map((u: URL) => `${u.pathname}?${u.searchParams}`)).toEqual([
+      "/api/job-board-api?remote=true&page=1",
+      "/api/job-board-api?remote=true&page=2",
+    ]);
+    expect(result.success && result.data).toHaveLength(2);
+  });
+
+  it("stops when there is no next page", async () => {
+    const fetchMock = stubFeeds({
+      arbeitnow: () => ok({ data: [arbeitnowJob(1)], links: { next: null } }),
+    });
+
+    await fetchArbeitnowJobs();
+
+    expect(urlsFor(fetchMock, "www.arbeitnow.com")).toHaveLength(1);
+  });
+
+  it("does not let a German city through a United States filter", () => {
+    const job = mapArbeitnowJob(arbeitnowJob(1))!;
+    expect(remoteLocationMatches(job.location, ["United States"])).toBe(false);
+    expect(remoteLocationMatches(job.location, ["Berlin"])).toBe(true);
+  });
+});
+
 describe("searchRemoteFeeds", () => {
   const feeds = [
     { name: "Himalayas", token: "himalayas" },
@@ -400,6 +632,37 @@ describe("searchRemoteFeeds", () => {
     expect(errors).toEqual([]);
     expect(jobs.map((j) => j.source)).toEqual(["Himalayas", "Jobicy", "Remote OK"]);
     expect(jobs.every((j) => j.workplaceType === "REMOTE")).toBe(true);
+  });
+
+  it("reads all six boards when all are switched on", async () => {
+    stubFeeds({
+      himalayas: () => ok({ jobs: [himalayasJob(1)] }),
+      jobicy: () => ok({ jobs: [jobicyJob(2)] }),
+      remoteok: () => ok([{ legal: "terms" }, remoteOkJob(3)]),
+      weworkremotely: () => ok(wwrFeed(wwrItem(4))),
+      workingnomads: () => ok([workingNomadsJob(5)]),
+      arbeitnow: () => ok({ data: [arbeitnowJob(6)], links: {} }),
+    });
+
+    const { jobs, errors } = await searchRemoteFeeds(
+      [
+        ...feeds,
+        { name: "We Work Remotely", token: "weworkremotely" },
+        { name: "Working Nomads", token: "workingnomads" },
+        { name: "Arbeitnow", token: "arbeitnow" },
+      ],
+      query,
+    );
+
+    expect(errors).toEqual([]);
+    expect(jobs.map((j) => j.source)).toEqual([
+      "Himalayas",
+      "Jobicy",
+      "Remote OK",
+      "We Work Remotely",
+      "Working Nomads",
+      "Arbeitnow",
+    ]);
   });
 
   it("only reads the feeds that are turned on", async () => {

@@ -4,9 +4,25 @@ import type { ScraperResult } from "../types";
 // One GET against a feed, with a timeout and an honest User-Agent (Remote OK
 // turns away anonymous clients). 429 is kept distinct so a run reports
 // "rate limited" rather than a bare network error.
-export async function fetchFeedJson(
+export function fetchFeedJson(
   url: string,
   feed: string,
+): Promise<ScraperResult<unknown>> {
+  return fetchFeed(url, feed, "json");
+}
+
+// The same request for a feed published as RSS; resolves to the raw XML.
+export function fetchFeedText(
+  url: string,
+  feed: string,
+): Promise<ScraperResult<string>> {
+  return fetchFeed(url, feed, "text") as Promise<ScraperResult<string>>;
+}
+
+async function fetchFeed(
+  url: string,
+  feed: string,
+  as: "json" | "text",
 ): Promise<ScraperResult<unknown>> {
   const controller = new AbortController();
   const timer = setTimeout(
@@ -18,7 +34,10 @@ export async function fetchFeedJson(
     const response = await fetch(url, {
       signal: controller.signal,
       headers: {
-        Accept: "application/json",
+        Accept:
+          as === "json"
+            ? "application/json"
+            : "application/rss+xml, application/xml, text/xml",
         "User-Agent": APP_CONSTANTS.REMOTE_FEED_USER_AGENT,
       },
     });
@@ -37,7 +56,10 @@ export async function fetchFeedJson(
     }
 
     try {
-      return { success: true, data: await response.json() };
+      return {
+        success: true,
+        data: as === "json" ? await response.json() : await response.text(),
+      };
     } catch {
       return {
         success: false,

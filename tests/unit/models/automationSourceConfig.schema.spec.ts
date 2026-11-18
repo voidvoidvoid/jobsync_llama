@@ -130,6 +130,26 @@ describe("CreateAutomationSchema conditional validation", () => {
     expect(result.success).toBe(true);
   });
 
+  it("remote accepts all six job boards at once", () => {
+    const result = CreateAutomationSchema.safeParse({
+      ...base,
+      jobBoard: "remote",
+      sourceConfig: {
+        remote: {
+          companies: [
+            "himalayas",
+            "jobicy",
+            "remoteok",
+            "weworkremotely",
+            "workingnomads",
+            "arbeitnow",
+          ].map((token) => ({ name: token, token })),
+        },
+      },
+    });
+    expect(result.success).toBe(true);
+  });
+
   it("remote rejects a feed it does not know", () => {
     const result = CreateAutomationSchema.safeParse({
       ...base,

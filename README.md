@@ -142,7 +142,7 @@ Set up automations that search for new jobs on a schedule and AI-match them agai
 
 - **Ashby** — same company-tracking workflow, backed by a built-in directory of 1,860+ companies (or paste a board URL). No API key required.
 
-- **Remote job boards** — an open search with no company list. Give it job titles and keywords and it searches [Himalayas](https://himalayas.app), [Jobicy](https://jobicy.com) and [Remote OK](https://remoteok.com) for remote roles from any employer, optionally keeping only those open to the countries you can work from. Each saved job links back to the board it came from. No API key required.
+- **Remote job boards** — an open search with no company list. Give it job titles and keywords and it searches [Himalayas](https://himalayas.app), [Jobicy](https://jobicy.com), [Remote OK](https://remoteok.com), [We Work Remotely](https://weworkremotely.com), [Working Nomads](https://www.workingnomads.com) and (optionally) [Arbeitnow](https://www.arbeitnow.com) for remote roles from any employer, optionally keeping only those open to the countries you can work from. Each saved job links back to the board it came from. No API key required.
 
 More job board sources are on the way. Discovered jobs are surfaced for review — accept the ones you like to promote them into your job tracker, or dismiss the rest.
 

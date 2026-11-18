@@ -3,7 +3,7 @@ type: how-to
 title: Remote Job Search
 description: Setting up an automation that searches remote job boards by job title and keyword with no company list, and limiting it to roles open to where you live.
 feature: automations
-tags: [automations, remote, remote jobs, keyword search, himalayas, jobicy, remote ok, job boards, work from anywhere, locations, countries, skills, job search]
+tags: [automations, remote, remote jobs, keyword search, himalayas, jobicy, remote ok, we work remotely, working nomads, arbeitnow, job boards, work from anywhere, locations, countries, skills, job search]
 aliases: [remote job boards, search without companies, open job search, keyword job search, remote automation]
 status: stable
 stale_after: 2027-09-30
@@ -13,11 +13,17 @@ stale_after: 2027-09-30
 
 ## How do I search for remote jobs without picking companies?
 
-Create an [automation](./automations.md) and choose **Remote job boards (keyword search)** as the job board in the first step. The Search step then shows three boards to switch on or off instead of a company picker, all on by default:
+Create an [automation](./automations.md) and choose **Remote job boards (keyword search)** as the job board in the first step. The Search step then shows six boards to switch on or off instead of a company picker. Two are searched with your terms:
 
-- **Himalayas** — the largest of the three. JobSync runs a search there for each of your titles and keywords and takes the newest results.
-- **Jobicy** — a curated board. It is searched with your first three terms of three characters or more, because Jobicy asks integrations to keep requests few.
-- **Remote OK** — publishes only its newest 100 postings, with no search of its own. JobSync reads that list and filters it with your terms.
+- **Himalayas** — the largest. JobSync runs a search there for each of your titles and keywords and takes the newest results.
+- **Jobicy** — a curated board, searched with your first three terms of three characters or more because it asks integrations to keep requests few.
+
+The other four have no search of their own, so JobSync downloads their current listings and filters them with your terms:
+
+- **Remote OK** — its newest 100 postings.
+- **We Work Remotely** — the newest postings from its public feed.
+- **Working Nomads** — its whole current list.
+- **Arbeitnow** — its newest remote postings. It is a European board, largely German employers, and many listings are written in German, so it is the one board that starts switched off.
 
 Every listing on these boards is a remote role from whichever employer posted it, so there is no company list to build and no remote filter to set. The rest of the wizard — resume, match threshold, schedule — works exactly as it does for a company-board automation, and so do ranking, AI scoring and the discovered-jobs list.
 
@@ -38,6 +44,10 @@ A remote role often still requires you to live in certain countries, and that is
 `US`, `USA` and `United States` are treated as the same place, as are `UK` and `United Kingdom`. Anything else must be spelled the way a posting would spell it, and a country does not match a region that contains it: `Germany` will not match a role listed as `Europe`, so add both if you want both.
 
 Leave the toggle off to see every remote role regardless of where it is open.
+
+## Why does Arbeitnow show a city for a remote job?
+
+Arbeitnow lists the employer's city — `Berlin`, `Munich` — rather than where the role is open to, and a remote role there is usually open to that country, not the world. So with **Only show jobs open to these locations** on, an Arbeitnow listing passes only if you added its city; a `United States` filter drops it. With the toggle off, every remote Arbeitnow listing that matches your terms is kept.
 
 ## What happens to duplicates, and where do saved jobs link to?
 

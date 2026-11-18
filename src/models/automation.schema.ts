@@ -66,11 +66,18 @@ export const AshbySourceConfigSchema = GreenhouseSourceConfigSchema.extend({
 // are accepted, so a saved config can never point the fetcher elsewhere.
 export const RemoteFeedSchema = z.object({
   name: z.string().min(1).max(200),
-  token: z.enum(["himalayas", "jobicy", "remoteok"]),
+  token: z.enum([
+    "himalayas",
+    "jobicy",
+    "remoteok",
+    "weworkremotely",
+    "workingnomads",
+    "arbeitnow",
+  ]),
 });
 
 export const RemoteSourceConfigSchema = GreenhouseSourceConfigSchema.extend({
-  companies: z.array(RemoteFeedSchema).max(3),
+  companies: z.array(RemoteFeedSchema).max(6),
 });
 
 export const SourceConfigSchema = z.object({

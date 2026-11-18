@@ -83,7 +83,7 @@ describe("useWizardForm subscriptions", () => {
     expect(result.current.step).toBe(0);
   });
 
-  it("turns every remote job board on when the remote board is chosen", async () => {
+  it("turns the general remote job boards on when the remote board is chosen", async () => {
     const { result } = renderHook(() => useWizardForm(props));
     act(() => result.current.form.setValue("name", "Remote roles"));
     act(() => result.current.nextStep());
@@ -100,6 +100,9 @@ describe("useWizardForm subscriptions", () => {
         { name: "Himalayas", token: "himalayas" },
         { name: "Jobicy", token: "jobicy" },
         { name: "Remote OK", token: "remoteok" },
+        { name: "We Work Remotely", token: "weworkremotely" },
+        { name: "Working Nomads", token: "workingnomads" },
+        // Arbeitnow (Europe-focused) is left for the user to switch on
       ]),
     );
   });

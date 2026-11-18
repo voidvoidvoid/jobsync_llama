@@ -16,10 +16,13 @@ export const EMPTY_ATS: AtsConfigValue = {
   saveUnanalyzed: true,
 };
 
-// The remote board starts with every feed on: there is no list to build first.
+// The remote board starts with its general-purpose feeds on: there is no list
+// to build first. Regional feeds are left for the user to switch on.
 export const EMPTY_REMOTE: AtsConfigValue = {
   ...EMPTY_ATS,
-  companies: REMOTE_FEEDS.map(({ name, token }) => ({ name, token })),
+  companies: REMOTE_FEEDS.filter((feed) => feed.defaultOn).map(
+    ({ name, token }) => ({ name, token }),
+  ),
 };
 
 export function emptyConfigFor(board: JobBoard): AtsConfigValue {

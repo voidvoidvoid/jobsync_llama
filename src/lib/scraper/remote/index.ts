@@ -5,6 +5,9 @@ import { buildSearchTerms } from "./terms";
 import { fetchHimalayasJobs } from "./himalayas";
 import { fetchJobicyJobs } from "./jobicy";
 import { fetchRemoteOkJobs } from "./remoteok";
+import { fetchWwrJobs } from "./weworkremotely";
+import { fetchWorkingNomadsJobs } from "./workingnomads";
+import { fetchArbeitnowJobs } from "./arbeitnow";
 
 export { remoteLocationMatches } from "./location";
 export { buildSearchTerms } from "./terms";
@@ -16,6 +19,9 @@ const FEEDS: Record<
   himalayas: fetchHimalayasJobs,
   jobicy: fetchJobicyJobs,
   remoteok: fetchRemoteOkJobs,
+  weworkremotely: fetchWwrJobs,
+  workingnomads: fetchWorkingNomadsJobs,
+  arbeitnow: fetchArbeitnowJobs,
 };
 
 // The "remote" board's search. `feeds` arrives in the slot company boards use

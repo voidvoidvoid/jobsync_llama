@@ -66,7 +66,13 @@ export interface RemoteFeed {
   token: RemoteFeedId;
 }
 
-export type RemoteFeedId = "himalayas" | "jobicy" | "remoteok";
+export type RemoteFeedId =
+  | "himalayas"
+  | "jobicy"
+  | "remoteok"
+  | "weworkremotely"
+  | "workingnomads"
+  | "arbeitnow";
 
 export interface RemoteSourceConfig
   extends Omit<GreenhouseSourceConfig, "companies"> {
@@ -74,30 +80,57 @@ export interface RemoteSourceConfig
 }
 
 // `url` is the feed's public site: the link shown beside its name, which also
-// credits it as the source of the listings.
+// credits it as the source of the listings. `defaultOn` is whether a new
+// remote automation starts with the feed switched on.
 export const REMOTE_FEEDS: {
   token: RemoteFeedId;
   name: string;
   url: string;
   blurb: string;
+  defaultOn: boolean;
 }[] = [
   {
     token: "himalayas",
     name: "Himalayas",
     url: "https://himalayas.app/jobs",
     blurb: "Largest feed. Searched with your titles and keywords.",
+    defaultOn: true,
   },
   {
     token: "jobicy",
     name: "Jobicy",
     url: "https://jobicy.com",
     blurb: "Curated remote roles. Searched with your first few terms.",
+    defaultOn: true,
   },
   {
     token: "remoteok",
     name: "Remote OK",
     url: "https://remoteok.com",
     blurb: "The newest 100 postings, filtered here by your terms.",
+    defaultOn: true,
+  },
+  {
+    token: "weworkremotely",
+    name: "We Work Remotely",
+    url: "https://weworkremotely.com",
+    blurb: "The newest postings from its public feed, filtered here.",
+    defaultOn: true,
+  },
+  {
+    token: "workingnomads",
+    name: "Working Nomads",
+    url: "https://www.workingnomads.com/jobs",
+    blurb: "Its whole current list in one download, filtered here.",
+    defaultOn: true,
+  },
+  {
+    token: "arbeitnow",
+    name: "Arbeitnow",
+    url: "https://www.arbeitnow.com",
+    blurb:
+      "Europe-focused, largely Germany, and many listings are in German. Its newest remote roles, filtered here.",
+    defaultOn: false,
   },
 ];
 

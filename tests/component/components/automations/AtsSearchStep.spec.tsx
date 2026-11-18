@@ -161,6 +161,10 @@ describe("AtsSearchStep on the remote board", () => {
     for (const name of ["Himalayas", "Jobicy", "Remote OK"]) {
       expect(screen.getByRole("switch", { name })).toBeChecked();
     }
+    // Boards that are offered but not in this automation show as off
+    for (const name of ["We Work Remotely", "Working Nomads", "Arbeitnow"]) {
+      expect(screen.getByRole("switch", { name })).not.toBeChecked();
+    }
     expect(screen.getByText("Where you can work from")).toBeInTheDocument();
   });
 
