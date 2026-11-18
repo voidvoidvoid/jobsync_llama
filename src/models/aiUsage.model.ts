@@ -40,6 +40,7 @@ export type AiFailureStatus = (typeof AI_FAILURE_STATUSES)[number];
 
 export const AI_PROVIDER_LABELS: Record<string, string> = {
   ollama: "Ollama",
+  llamacpp: "llama.cpp",
   openai: "OpenAI",
   deepseek: "DeepSeek",
   gemini: "Gemini",

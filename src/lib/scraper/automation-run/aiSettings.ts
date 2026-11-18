@@ -13,11 +13,11 @@ import {
   type AiSettings,
 } from "@/models/userSettings.model";
 
-// Ollama serializes on the GPU, so it must process matches one at a time;
-// other providers can fan out concurrently.
+// Ollama and llama.cpp serialize on the GPU, so they must process matches one
+// at a time; other providers can fan out concurrently.
 export function getAutomationMatchLimit(provider: AiProvider) {
   const concurrency =
-    provider === AiProvider.OLLAMA
+    provider === AiProvider.OLLAMA || provider === AiProvider.LLAMACPP
       ? 1
       : APP_CONSTANTS.AUTOMATION_MATCH_CONCURRENCY;
   return pLimit(concurrency);
@@ -27,6 +27,10 @@ export function getDefaultModelForProvider(provider: AiProvider): string {
   switch (provider) {
     case AiProvider.OLLAMA:
       return OllamaModel.QWEN3_5_9B;
+    // llama-server answers with whatever it has loaded when the name is
+    // unknown; "default" is only reached when no model was ever picked.
+    case AiProvider.LLAMACPP:
+      return "default";
     case AiProvider.OPENAI:
       return OpenaiModel.GPT4O_MINI;
     case AiProvider.DEEPSEEK:

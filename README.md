@@ -80,6 +80,8 @@ Environment variables are set in a `.env` file beside `docker-compose.yml` (copy
 | `AUTH_SECRET` | Auto-generated if not set. To set manually: `openssl rand -base64 32` |
 | `ENCRYPTION_KEY` | Encrypts the API keys you save in Settings. **Set your own** (`openssl rand -base64 32`) before adding any keys, and never change it afterwards — a new value makes every stored API key unrecoverable. |
 | `NEXTAUTH_URL` | The address you open JobSync at. Defaults to `http://localhost:3737`; on a homelab server, use the server's IP or hostname. |
+| `LLAMACPP_BASE_URL` | Address of a [llama.cpp](https://github.com/ggml-org/llama.cpp) `llama-server`, or any other OpenAI-compatible API (LM Studio, vLLM, LocalAI). Defaults to `http://host.docker.internal:8080`; `/v1` is added when missing. Each user can override it in **Settings → API Keys**. |
+| `LLAMACPP_API_KEY` | Optional. Only needed when that server requires a key (`llama-server --api-key`). |
 | `MCP_ENABLED` | Set to `false` to turn off the [MCP server](#mcp-server-ai-agent-integration). Enabled by default. |
 | `DATABASE_URL` | Leave unset to use the bundled Postgres. To use your own, set it to your server's address and also set `BUNDLED_DB=0`; without it an unused bundled database container still starts. The bundled image includes the `pgvector` extension, which an upcoming release uses for knowledge base and resume embeddings; your own server will need it then too. `sslmode=require` verifies the server's certificate; for a self-signed one, use `?uselibpqcompat=true&sslmode=require`. See [Upgrading to Postgres](https://github.com/Gsync/jobsync/wiki/Upgrading-To-Postgres). |
 
@@ -243,6 +245,20 @@ API keys for all cloud providers can be configured in **Settings > AI Settings**
 > **Note:** Selected models must support **structured output** and **tool calling** for AI features to work correctly — the AI Assistant panel works by calling tools, so a model without tool support will reply with text instead of doing anything.
 
 **Known-good models.** The AI Assistant has been tested end to end with `qwen3.5:9b` on Ollama (fully local), `deepseek-v4-flash`, and OpenAI `gpt-6`. Other tool-calling models should work, but these are the ones exercised against the full set of assistant features.
+
+<details>
+<summary><strong>llama.cpp and other OpenAI-compatible servers (Local)</strong></summary>
+
+Works with [llama.cpp](https://github.com/ggml-org/llama.cpp)'s `llama-server` and anything else that speaks the OpenAI chat-completions API: LM Studio, vLLM, LocalAI, text-generation-webui and so on.
+
+- Start the server so JobSync can reach it, with tool calling enabled: `llama-server -m model.gguf --host 0.0.0.0 --port 8080 --jinja -c 16384`
+- Under **Settings → API Keys**, set the **llama.cpp (OpenAI-compatible)** base URL, for example `http://192.168.1.50:8080`. `/v1` is added when missing. The server default comes from `LLAMACPP_BASE_URL`
+- If the server needs a key (`--api-key`), add it on the **llama.cpp API key (optional)** card
+- Under **Settings → AI Provider**, pick **llama.cpp (OpenAI-compatible)** and one of the models the server lists
+- The context size is whatever the server was started with (`-c`); JobSync cannot change it per request the way it does with Ollama. 16k is a sensible minimum for the AI Assistant
+- The AI Assistant needs a tool-calling model and `--jinja`. Resume review, job matching and resume import ask for JSON-schema output, which `llama-server` enforces with a grammar
+
+</details>
 
 <details>
 <summary><strong>Ollama (Local)</strong></summary>

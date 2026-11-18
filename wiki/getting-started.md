@@ -17,7 +17,7 @@ Open the app and choose **Create Account** on the sign-in page, or go straight t
 
 ## How do I connect an AI provider?
 
-Open the avatar menu at the bottom of the left sidebar and choose **Settings**, then **AI Provider**. Pick a provider, then a model. JobSync supports Ollama, OpenAI, DeepSeek, Gemini and OpenRouter. Ollama runs models on your own machine and needs no key; the other four are hosted and need an API key, which you add under **Settings → API Keys** in that same menu. Keys are encrypted before they are stored.
+Open the avatar menu at the bottom of the left sidebar and choose **Settings**, then **AI Provider**. Pick a provider, then a model. JobSync supports Ollama, llama.cpp (or any other OpenAI-compatible server), OpenAI, DeepSeek, Gemini and OpenRouter. Ollama and llama.cpp run models on your own machine and need no key (llama.cpp takes an optional one); the other four are hosted and need an API key, which you add under **Settings → API Keys** in that same menu. Keys are encrypted before they are stored.
 
 If you run Ollama somewhere other than the default address, add that address under **Settings → API Keys** as the Ollama Base URL. Leaving it unset is fine and is the normal case — JobSync then uses the server default shown on that card. If you have saved one and want to go back to the default, use **Reset to default** on the Ollama card. The connection check on that page only runs by itself when Ollama is your selected provider; the refresh button next to it checks on demand whatever you have selected.
 

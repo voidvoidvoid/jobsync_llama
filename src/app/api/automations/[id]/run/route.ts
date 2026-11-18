@@ -108,6 +108,21 @@ export async function POST(
         );
       }
     }
+    if (aiSettings.provider === AiProvider.LLAMACPP) {
+      const baseUrl = (await resolveApiKey(userId, "llamacpp"))!;
+      const llamacppCheck = await PROVIDER_VERIFIERS.llamacpp(baseUrl, { userId });
+      if (!llamacppCheck.success) {
+        return NextResponse.json(
+          {
+            success: false,
+            message:
+              llamacppCheck.error ||
+              "The llama.cpp server is not available. Please make sure it is running.",
+          },
+          { status: 503 }
+        );
+      }
+    }
 
     // Rate-limited last, right before the run actually launches, so failed
     // preflight checks above (missing resume, already running, Ollama down)

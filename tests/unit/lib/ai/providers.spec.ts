@@ -10,6 +10,7 @@ vi.mock("@/lib/ai/provider-registry.server", () => ({
     deepseek: vi.fn(),
     ollama: vi.fn(),
     gemini: vi.fn(),
+    llamacpp: vi.fn(),
   },
 }));
 
@@ -85,5 +86,42 @@ describe("getModel – provider validation", () => {
     await expect(
       getModel("openrouter", "openai/gpt-4o"),
     ).resolves.toBeDefined();
+  });
+});
+
+describe("getModel – llamacpp", () => {
+  beforeEach(() => {
+    (resolveApiKey as any).mockReset();
+    (PROVIDER_FACTORIES.llamacpp as any).mockReset().mockReturnValue({});
+  });
+
+  it("passes the base URL and the optional API key to the factory", async () => {
+    (resolveApiKey as any).mockImplementation(async (_: string, id: string) =>
+      id === "llamacpp" ? "http://10.0.0.5:8080" : "secret-key",
+    );
+
+    await getModel("llamacpp", "qwen3-14b", "user-1");
+
+    expect(resolveApiKey).toHaveBeenCalledWith("user-1", "llamacpp");
+    expect(resolveApiKey).toHaveBeenCalledWith("user-1", "llamacpp-key");
+    expect(PROVIDER_FACTORIES.llamacpp).toHaveBeenCalledWith(
+      "http://10.0.0.5:8080",
+      "qwen3-14b",
+      "secret-key",
+    );
+  });
+
+  it("works without an API key", async () => {
+    (resolveApiKey as any).mockImplementation(async (_: string, id: string) =>
+      id === "llamacpp" ? "http://10.0.0.5:8080" : undefined,
+    );
+
+    await getModel("llamacpp", "qwen3-14b", "user-1");
+
+    expect(PROVIDER_FACTORIES.llamacpp).toHaveBeenCalledWith(
+      "http://10.0.0.5:8080",
+      "qwen3-14b",
+      undefined,
+    );
   });
 });

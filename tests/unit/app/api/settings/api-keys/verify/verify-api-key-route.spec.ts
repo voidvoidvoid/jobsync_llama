@@ -58,7 +58,11 @@ describe("POST /api/settings/api-keys/verify", () => {
 
     expect(res.status).toBe(200);
     expect(data).toEqual({ success: true, models: ["gpt-4o"] });
-    expect(mockVerifier).toHaveBeenCalledWith("sk-live");
+    // The signed-in user rides along so a verifier can read a companion
+    // credential (llama.cpp's API key beside its base URL)
+    expect(mockVerifier).toHaveBeenCalledWith("sk-live", {
+      userId: expect.any(String),
+    });
   });
 
   it("reports a connection failure as unreachable, not a bad key", async () => {

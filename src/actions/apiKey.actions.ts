@@ -161,6 +161,10 @@ export async function getDefaultOllamaBaseUrl(): Promise<string> {
   return process.env.OLLAMA_BASE_URL || "http://127.0.0.1:11434";
 }
 
+export async function getDefaultLlamacppBaseUrl(): Promise<string> {
+  return process.env.LLAMACPP_BASE_URL || "http://127.0.0.1:8080";
+}
+
 export async function getOllamaBaseUrl(): Promise<string> {
   try {
     const user = await getCurrentUser();

@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const result = await verifier(key);
+    const result = await verifier(key, { userId: session.user.id });
     return NextResponse.json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Verification failed";

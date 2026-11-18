@@ -1,12 +1,25 @@
-import { PROVIDER_REGISTRY, AI_PROVIDERS } from "@/lib/ai/provider-registry";
+import {
+  PROVIDER_REGISTRY,
+  AI_PROVIDERS,
+  getCredentialProviders,
+  normalizeOpenAICompatibleBaseUrl,
+} from "@/lib/ai/provider-registry";
 
 describe("AI_PROVIDERS", () => {
   it("includes openrouter", () => {
     expect(AI_PROVIDERS).toContain("openrouter");
   });
 
-  it("contains exactly 5 providers", () => {
-    expect(AI_PROVIDERS).toHaveLength(5);
+  it("contains exactly 6 providers", () => {
+    expect(AI_PROVIDERS).toHaveLength(6);
+  });
+
+  it("includes llamacpp", () => {
+    expect(AI_PROVIDERS).toContain("llamacpp");
+  });
+
+  it("never offers a companion credential as an AI provider", () => {
+    expect(AI_PROVIDERS).not.toContain("llamacpp-key");
   });
 
   it("contains ollama, openai, deepseek, openrouter, gemini", () => {
@@ -132,5 +145,68 @@ describe("PROVIDER_REGISTRY – openrouter entry", () => {
         "meta-llama/llama-3-8b",
       ]);
     });
+  });
+});
+
+describe("PROVIDER_REGISTRY – llamacpp entry", () => {
+  const entry = PROVIDER_REGISTRY.llamacpp;
+
+  it("is a local base-url provider with an env default", () => {
+    expect(entry.credentialType).toBe("base-url");
+    expect(entry.category).toBe("local");
+    expect(entry.envVar).toBe("LLAMACPP_BASE_URL");
+    expect(entry.defaultCredential).toBe("http://127.0.0.1:8080");
+    expect(entry.keyConfig.sensitive).toBe(false);
+  });
+
+  it("points at its optional API key credential", () => {
+    expect(entry.apiKeyProvider).toBe("llamacpp-key");
+    const key = PROVIDER_REGISTRY["llamacpp-key"];
+    expect(key.companionOf).toBe("llamacpp");
+    expect(key.envVar).toBe("LLAMACPP_API_KEY");
+    expect(key.keyConfig.sensitive).toBe(true);
+    // Optional: no default, so an unset key resolves to undefined
+    expect(key.defaultCredential).toBeUndefined();
+  });
+
+  it("parses an OpenAI /v1/models response", () => {
+    const data = {
+      object: "list",
+      data: [{ id: "qwen3-14b-q5.gguf" }, { id: "gemma-3-12b" }],
+    };
+    expect(entry.parseModelsResponse!(data)).toEqual([
+      "gemma-3-12b",
+      "qwen3-14b-q5.gguf",
+    ]);
+  });
+
+  it("drops entries without a usable id", () => {
+    const data = { data: [{ id: "" }, {}, { id: "model-a" }] };
+    expect(entry.parseModelsResponse!(data)).toEqual(["model-a"]);
+  });
+
+  it("returns an empty list for an unexpected body", () => {
+    expect(entry.parseModelsResponse!({})).toEqual([]);
+  });
+});
+
+describe("getCredentialProviders", () => {
+  it("lists the llama.cpp key right after its base URL", () => {
+    const ids = getCredentialProviders().map((e) => e.id);
+    expect(ids.indexOf("llamacpp-key")).toBe(ids.indexOf("llamacpp") + 1);
+    expect(ids).toHaveLength(AI_PROVIDERS.length + 1);
+  });
+});
+
+describe("normalizeOpenAICompatibleBaseUrl", () => {
+  it.each([
+    ["http://10.0.0.5:8080", "http://10.0.0.5:8080/v1"],
+    ["http://10.0.0.5:8080/", "http://10.0.0.5:8080/v1"],
+    ["http://10.0.0.5:8080/v1", "http://10.0.0.5:8080/v1"],
+    ["http://10.0.0.5:8080/v1/", "http://10.0.0.5:8080/v1"],
+    ["  https://llm.example.com/api/v2  ", "https://llm.example.com/api/v2"],
+    ["https://llm.example.com/openai", "https://llm.example.com/openai/v1"],
+  ])("%s -> %s", (input, expected) => {
+    expect(normalizeOpenAICompatibleBaseUrl(input)).toBe(expected);
   });
 });

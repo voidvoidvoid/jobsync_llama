@@ -141,14 +141,25 @@ async function runAutomationTraced(
     // Checked here (not just in the manual /run route) so scheduled/cron
     // runs also fail fast instead of silently completing with 0 matches.
     const aiSettings = await getUserAiSettings(automation.userId);
-    if (aiSettings.provider === AiProvider.OLLAMA) {
-      const ollamaCheck = await PROVIDER_VERIFIERS.ollama(
-        (await resolveApiKey(automation.userId, "ollama"))!,
-      );
+    if (
+      aiSettings.provider === AiProvider.OLLAMA ||
+      aiSettings.provider === AiProvider.LLAMACPP
+    ) {
+      const isOllama = aiSettings.provider === AiProvider.OLLAMA;
+      const ollamaCheck = isOllama
+        ? await PROVIDER_VERIFIERS.ollama(
+            (await resolveApiKey(automation.userId, "ollama"))!,
+          )
+        : await PROVIDER_VERIFIERS.llamacpp(
+            (await resolveApiKey(automation.userId, "llamacpp"))!,
+            { userId: automation.userId },
+          );
       if (!ollamaCheck.success) {
         const message =
           ollamaCheck.error ||
-          "Ollama is not available. Please make sure Ollama is running.";
+          (isOllama
+            ? "Ollama is not available. Please make sure Ollama is running."
+            : "The llama.cpp server is not available. Please make sure it is running.");
         automationLogger.log(automation.id, "error", message);
         automationLogger.endRun(automation.id);
 

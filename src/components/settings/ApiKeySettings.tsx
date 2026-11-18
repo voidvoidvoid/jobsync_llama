@@ -30,12 +30,13 @@ import {
   saveApiKey,
   deleteApiKey,
   getDefaultOllamaBaseUrl,
+  getDefaultLlamacppBaseUrl,
 } from "@/actions/apiKey.actions";
 import type {
   ApiKeyClientResponse,
   ApiKeyProvider,
 } from "@/models/apiKey.model";
-import { getAiProviders } from "@/lib/ai/provider-registry";
+import { getCredentialProviders } from "@/lib/ai/provider-registry";
 import { AiProvider } from "@/models/ai.model";
 import { checkOllamaConnection } from "@/utils/ai.utils";
 import { getUserSettings } from "@/actions/userSettings.actions";
@@ -49,7 +50,7 @@ interface ProviderConfig {
   sensitive: boolean;
 }
 
-const PROVIDERS: ProviderConfig[] = getAiProviders().map((entry) => ({
+const PROVIDERS: ProviderConfig[] = getCredentialProviders().map((entry) => ({
   id: entry.id as ApiKeyProvider,
   name: entry.displayName,
   placeholder: entry.keyConfig.placeholder,
@@ -64,6 +65,16 @@ function ApiKeySettings() {
   const [defaultOllamaUrl, setDefaultOllamaUrl] = useState(
     "http://127.0.0.1:11434",
   );
+  const [defaultLlamacppUrl, setDefaultLlamacppUrl] = useState(
+    "http://127.0.0.1:8080",
+  );
+  // The server's own default for a base-url provider (its env var, if set)
+  const defaultBaseUrl = (provider: ProviderConfig) =>
+    provider.id === "ollama"
+      ? defaultOllamaUrl
+      : provider.id === "llamacpp"
+        ? defaultLlamacppUrl
+        : provider.placeholder;
   const [editingProvider, setEditingProvider] = useState<ApiKeyProvider | null>(
     null,
   );
@@ -106,6 +117,7 @@ function ApiKeySettings() {
       .catch((error) => console.error("Error fetching API keys:", error))
       .finally(() => setIsLoading(false));
     getDefaultOllamaBaseUrl().then(setDefaultOllamaUrl);
+    getDefaultLlamacppBaseUrl().then(setDefaultLlamacppUrl);
     // Probing on mount for someone who picked another provider reads as the
     // app overriding their choice, so only auto-check when Ollama is selected.
     getUserSettings().then((result) => {
@@ -119,7 +131,7 @@ function ApiKeySettings() {
     keys.find((k) => k.provider === provider);
 
   const isBaseUrlProvider = (providerId: string) => {
-    const entry = getAiProviders().find((e) => e.id === providerId);
+    const entry = getCredentialProviders().find((e) => e.id === providerId);
     return entry?.credentialType === "base-url";
   };
 
@@ -231,7 +243,7 @@ function ApiKeySettings() {
                       {provider.description}
                       {isBaseUrl && (
                         <span className="block text-xs text-muted-foreground/70 mt-0.5">
-                          Default: {provider.id === "ollama" ? defaultOllamaUrl : provider.placeholder}
+                          Default: {defaultBaseUrl(provider)}
                         </span>
                       )}
                     </CardDescription>
@@ -290,8 +302,8 @@ function ApiKeySettings() {
                         id={`key-${provider.id}`}
                         type={provider.inputType}
                         placeholder={
-                          isBaseUrl && provider.id === "ollama"
-                            ? defaultOllamaUrl
+                          isBaseUrl
+                            ? defaultBaseUrl(provider)
                             : provider.placeholder
                         }
                         value={inputValue}
@@ -363,9 +375,7 @@ function ApiKeySettings() {
                                 <>
                                   Clear the saved {provider.name} base URL?
                                   JobSync will use the server default,{" "}
-                                  {provider.id === "ollama"
-                                    ? defaultOllamaUrl
-                                    : provider.placeholder}
+                                  {defaultBaseUrl(provider)}
                                   .
                                 </>
                               ) : (

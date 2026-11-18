@@ -16,6 +16,7 @@ export interface AiModel {
 // Provider enum - extensible for future providers
 export enum AiProvider {
   OLLAMA = "ollama",
+  LLAMACPP = "llamacpp",
   OPENAI = "openai",
   DEEPSEEK = "deepseek",
   GEMINI = "gemini",

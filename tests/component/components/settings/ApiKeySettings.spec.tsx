@@ -13,6 +13,7 @@ vi.mock("@/actions/apiKey.actions", () => ({
   saveApiKey: vi.fn(),
   deleteApiKey: (provider: string) => deleteApiKey(provider),
   getDefaultOllamaBaseUrl: () => getDefaultOllamaBaseUrl(),
+  getDefaultLlamacppBaseUrl: () => Promise.resolve("http://127.0.0.1:8080"),
 }));
 
 vi.mock("@/actions/userSettings.actions", () => ({

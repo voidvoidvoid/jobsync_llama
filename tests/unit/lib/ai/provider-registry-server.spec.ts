@@ -6,6 +6,8 @@ vi.mock("@ai-sdk/openai", () => ({ createOpenAI: vi.fn() }));
 vi.mock("@ai-sdk/deepseek", () => ({ createDeepSeek: vi.fn() }));
 vi.mock("@ai-sdk/google", () => ({ createGoogleGenerativeAI: vi.fn() }));
 vi.mock("ollama-ai-provider-v2", () => ({ createOllama: vi.fn() }));
+// The llama.cpp verifiers read the user's other saved credential
+vi.mock("@/lib/api-key-resolver", () => ({ resolveApiKey: vi.fn() }));
 
 import { createOpenAI } from "@ai-sdk/openai";
 import {
