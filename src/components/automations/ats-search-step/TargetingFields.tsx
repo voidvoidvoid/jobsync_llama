@@ -13,9 +13,16 @@ import type { AtsConfigValue } from "./types";
 interface TargetingFieldsProps {
   value: AtsConfigValue;
   onChange: (next: AtsConfigValue) => void;
+  // Remote job boards: titles and keywords are also what the boards are
+  // searched with, and a location is where the candidate may live.
+  remote?: boolean;
 }
 
-export function TargetingFields({ value, onChange }: TargetingFieldsProps) {
+export function TargetingFields({
+  value,
+  onChange,
+  remote = false,
+}: TargetingFieldsProps) {
   // Without target titles or keywords there is no signal to rank jobs against,
   // so the relevance floor drops everything and nothing is saved.
   const noSignal =
@@ -28,7 +35,11 @@ export function TargetingFields({ value, onChange }: TargetingFieldsProps) {
         label="Target job titles"
         placeholder="e.g., Frontend Engineer"
         noun="job title"
-        description="Optional. Listings whose title matches rank higher."
+        description={
+          remote
+            ? "Searched on each job board, and listings whose title matches rank higher."
+            : "Optional. Listings whose title matches rank higher."
+        }
         values={value.targetTitles ?? []}
         onChange={(next) => onChange({ ...value, targetTitles: next })}
         loadOptions={async () => {
@@ -45,7 +56,11 @@ export function TargetingFields({ value, onChange }: TargetingFieldsProps) {
         label="Keywords / skills"
         placeholder="e.g., React"
         noun="keyword"
-        description="Optional. Matched against title and description."
+        description={
+          remote
+            ? "Searched on each job board, and matched against title and description. The first six titles and keywords are used as searches."
+            : "Optional. Matched against title and description."
+        }
         values={value.keywords ?? []}
         onChange={(next) => onChange({ ...value, keywords: next })}
         loadOptions={async () => {
@@ -70,10 +85,14 @@ export function TargetingFields({ value, onChange }: TargetingFieldsProps) {
       )}
 
       <EntityStringChipInput
-        label="Locations"
-        placeholder="e.g., Calgary, Seattle"
+        label={remote ? "Where you can work from" : "Locations"}
+        placeholder={remote ? "e.g., United States, Europe" : "e.g., Calgary, Seattle"}
         noun="location"
-        description="Optional. Used only to filter results when the toggle below is on (not part of ranking)."
+        description={
+          remote
+            ? "Optional. Countries or regions, spelled as a posting would. Used only when the toggle below is on."
+            : "Optional. Used only to filter results when the toggle below is on (not part of ranking)."
+        }
         values={value.locations ?? []}
         onChange={(next) => onChange({ ...value, locations: next })}
         loadOptions={async () => {
@@ -88,10 +107,15 @@ export function TargetingFields({ value, onChange }: TargetingFieldsProps) {
 
       <div className="flex items-start justify-between gap-4 rounded-lg border p-3">
         <div className="space-y-1">
-          <Label>Only show jobs in these locations</Label>
+          <Label>
+            {remote
+              ? "Only show jobs open to these locations"
+              : "Only show jobs in these locations"}
+          </Label>
           <p className="text-sm text-muted-foreground">
-            When on, jobs matching none of your locations are dropped before
-            ranking. Remote roles always pass.
+            {remote
+              ? "When on, roles restricted to other places are dropped before ranking. Roles open worldwide always pass."
+              : "When on, jobs matching none of your locations are dropped before ranking. Remote roles always pass."}
           </p>
         </div>
         <Switch

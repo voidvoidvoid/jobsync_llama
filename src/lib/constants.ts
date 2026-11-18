@@ -143,6 +143,21 @@ export const APP_CONSTANTS = {
   ASHBY_FETCH_TIMEOUT_MS: 25_000, // per-board AbortController timeout
   ASHBY_FETCH_CONCURRENCY: 5,
 
+  // Remote job feeds (the "remote" board). All three are public, keyless APIs
+  // that ask for modest use, so requests are few and strictly sequential.
+  HIMALAYAS_SEARCH_URL: "https://himalayas.app/jobs/api/search",
+  HIMALAYAS_BROWSE_URL: "https://himalayas.app/jobs/api",
+  HIMALAYAS_PAGE_SIZE: 20, // fixed by the API
+  HIMALAYAS_PAGES_PER_TERM: 2,
+  JOBICY_API_URL: "https://jobicy.com/api/v2/remote-jobs",
+  JOBICY_COUNT: 100,
+  JOBICY_MAX_TERMS: 3, // Jobicy asks for a few requests a day
+  REMOTEOK_API_URL: "https://remoteok.com/api",
+  REMOTE_FEED_MAX_TERMS: 6, // search terms sent to a feed per run
+  REMOTE_FEED_REQUEST_DELAY_MS: 400, // pause between requests to one feed
+  REMOTE_FEED_TIMEOUT_MS: 25_000, // per request
+  REMOTE_FEED_USER_AGENT: "JobSync (self-hosted job tracker)",
+
   // MCP server settings
   MCP_DUPLICATE_WINDOW_DAYS: 30,
   MCP_TOKEN_EXPIRY_PRESETS: [30, 90, 365] as const,

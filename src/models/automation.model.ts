@@ -11,7 +11,11 @@ export type AutomationRunStatus =
   | "rate_limited"
   | "cancelled";
 export type DiscoveryStatus = "new" | "accepted" | "dismissed";
-export type JobBoard = "greenhouse" | "lever" | "ashby";
+// Company job boards: one board per employer, picked from a directory.
+export type AtsBoard = "greenhouse" | "lever" | "ashby";
+// "remote" is the open search: public remote-job feeds queried by keyword,
+// with no company list.
+export type JobBoard = AtsBoard | "remote";
 
 export interface GreenhouseCompany {
   name: string;
@@ -54,16 +58,82 @@ export interface AshbySourceConfig
   companies: AshbyCompany[];
 }
 
+// A remote-job feed the "remote" board can read. Stored in the same
+// `companies` slot the ATS boards use ({ name, token }), so per-feed failures,
+// notifications and the run funnel all work unchanged.
+export interface RemoteFeed {
+  name: string;
+  token: RemoteFeedId;
+}
+
+export type RemoteFeedId = "himalayas" | "jobicy" | "remoteok";
+
+export interface RemoteSourceConfig
+  extends Omit<GreenhouseSourceConfig, "companies"> {
+  companies: RemoteFeed[];
+}
+
+// `url` is the feed's public site: the link shown beside its name, which also
+// credits it as the source of the listings.
+export const REMOTE_FEEDS: {
+  token: RemoteFeedId;
+  name: string;
+  url: string;
+  blurb: string;
+}[] = [
+  {
+    token: "himalayas",
+    name: "Himalayas",
+    url: "https://himalayas.app/jobs",
+    blurb: "Largest feed. Searched with your titles and keywords.",
+  },
+  {
+    token: "jobicy",
+    name: "Jobicy",
+    url: "https://jobicy.com",
+    blurb: "Curated remote roles. Searched with your first few terms.",
+  },
+  {
+    token: "remoteok",
+    name: "Remote OK",
+    url: "https://remoteok.com",
+    blurb: "The newest 100 postings, filtered here by your terms.",
+  },
+];
+
 export interface SourceConfig {
   greenhouse?: GreenhouseSourceConfig;
   lever?: LeverSourceConfig;
   ashby?: AshbySourceConfig;
+  remote?: RemoteSourceConfig;
 }
 
 // Plain, dependency-free board list. Do NOT import this from ats/registry.ts
 // (that pulls the network-calling search fns into client bundles). Both the
 // client-imported schema and the scheduler import it here.
-export const ATS_BOARDS: JobBoard[] = ["greenhouse", "lever", "ashby"];
+export const ATS_BOARDS: AtsBoard[] = ["greenhouse", "lever", "ashby"];
+
+// Every board an automation can run on (what the scheduler picks up).
+export const JOB_BOARDS: JobBoard[] = [...ATS_BOARDS, "remote"];
+
+export const JOB_BOARD_LABELS: Record<JobBoard, string> = {
+  greenhouse: "Greenhouse",
+  lever: "Lever",
+  ashby: "Ashby",
+  remote: "Remote job boards",
+};
+
+// Display name for a stored jobBoard value, including retired ones.
+export function jobBoardLabel(board: string): string {
+  return (
+    JOB_BOARD_LABELS[board as JobBoard] ??
+    board.charAt(0).toUpperCase() + board.slice(1)
+  );
+}
+
+export function isRemoteBoard(board: string): boolean {
+  return board === "remote";
+}
 
 // Boards that used to exist and were removed. Their Automation rows stay in
 // the database; the UI marks them retired and only offers pause/delete.
@@ -150,7 +220,8 @@ export interface ScrapedJobData {
   location: string;
   description: string;
   sourceUrl: string;
-  sourceBoard: JobBoard;
+  // A job board id, or the feed name ("Himalayas") for remote-feed listings
+  sourceBoard: string;
   employmentType?: string;
   isRemote?: boolean;
   workplaceType?: string;

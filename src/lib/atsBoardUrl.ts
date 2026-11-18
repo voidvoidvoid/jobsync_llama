@@ -1,5 +1,9 @@
 import { APP_CONSTANTS } from "@/lib/constants";
-import type { JobBoard, LeverHost } from "@/models/automation.model";
+import {
+  REMOTE_FEEDS,
+  type JobBoard,
+  type LeverHost,
+} from "@/models/automation.model";
 
 // Public job-board URL for a company. Lever's public posting host
 // (jobs.lever.co / jobs.eu.lever.co) is region-specific and differs from its
@@ -8,6 +12,13 @@ export function companyBoardUrl(
   jobBoard: JobBoard,
   company: { token: string; host?: LeverHost },
 ): string {
+  if (jobBoard === "remote") {
+    // A remote feed's own site, not a per-company board
+    return (
+      REMOTE_FEEDS.find((feed) => feed.token === company.token)?.url ??
+      REMOTE_FEEDS[0].url
+    );
+  }
   if (jobBoard === "lever") {
     const base =
       company.host === "eu"

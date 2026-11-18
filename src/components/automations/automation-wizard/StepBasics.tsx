@@ -60,10 +60,15 @@ export function StepBasics({
                 </SelectItem>
                 <SelectItem value="lever">Lever (company boards)</SelectItem>
                 <SelectItem value="ashby">Ashby (company boards)</SelectItem>
+                <SelectItem value="remote">
+                  Remote job boards (keyword search)
+                </SelectItem>
               </SelectContent>
             </Select>
             <FormDescription>
-              Track specific companies&apos; job boards
+              {field.value === "remote"
+                ? "Search remote job boards by title and keyword, with no company list"
+                : "Track specific companies' job boards"}
             </FormDescription>
             <FormMessage />
           </FormItem>

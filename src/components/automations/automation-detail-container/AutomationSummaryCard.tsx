@@ -5,7 +5,10 @@ import { format } from "date-fns";
 import { AlertTriangle, Clock, FileText, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import type { AutomationWithResume } from "@/models/automation.model";
+import {
+  jobBoardLabel,
+  type AutomationWithResume,
+} from "@/models/automation.model";
 import { AutomationSearchConfig } from "./AutomationSearchConfig";
 
 interface AutomationSummaryCardProps {
@@ -49,7 +52,7 @@ export function AutomationSummaryCard({
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Job Board</p>
-            <p className="text-sm font-medium capitalize">{automation.jobBoard}</p>
+            <p className="text-sm font-medium">{jobBoardLabel(automation.jobBoard)}</p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Match Threshold</p>

@@ -1,9 +1,9 @@
 ---
 type: how-to
 title: Automations
-description: Setting up a scheduled ATS search over company job boards, filling in the filters and resume skills that make it return good matches, and handling the jobs it discovers.
+description: Setting up a scheduled job search, over company job boards or over remote job boards by keyword, filling in the filters and resume skills that make it return good matches, and handling the jobs it discovers.
 feature: automations
-tags: [automations, job search, scheduled search, greenhouse, lever, ashby, ats, company boards, watchlist, discovered jobs, match score, keywords, target titles, locations, resume skills, filters, notifications]
+tags: [automations, job search, scheduled search, greenhouse, lever, ashby, ats, company boards, remote, remote jobs, himalayas, jobicy, remote ok, keyword search, watchlist, discovered jobs, match score, keywords, target titles, locations, resume skills, filters, notifications]
 aliases: [automated job search, job discovery, scheduled job search, job scraper, run a search, discovered jobs]
 status: stable
 stale_after: 2027-09-30
@@ -13,9 +13,12 @@ stale_after: 2027-09-30
 
 ## What does an automation do?
 
-An automation is a saved search that runs once a day and brings new job postings to you. It reads the public job boards of the companies you pick, drops the listings that have nothing to do with what you asked for, sends the most promising ones to your AI provider to be scored against one of your resumes, and saves the results as **discovered jobs** you can accept into your tracker or dismiss.
+An automation is a saved search that runs once a day and brings new job postings to you. It reads public job listings, drops the ones that have nothing to do with what you asked for, sends the most promising ones to your AI provider to be scored against one of your resumes, and saves the results as **discovered jobs** you can accept into your tracker or dismiss.
 
-Everything is company-centric: JobSync reads job boards hosted by **Greenhouse**, **Lever** and **Ashby**, so you choose employers rather than searching the whole internet. One automation covers one of those three boards; create a second automation if you want to track companies on another.
+The **Job Board** you pick in the first step decides the kind of search:
+
+- **Company boards** — **Greenhouse**, **Lever** or **Ashby**. You choose employers and JobSync reads each one's job board. One automation covers one of the three.
+- **Remote job boards** — a keyword search with no company list. See [Remote Job Search](./remote-job-search.md).
 
 An automation needs an AI provider and model set under **Settings → AI Provider**, and a resume in your profile to match against.
 
@@ -23,14 +26,14 @@ An automation needs an AI provider and model set under **Settings → AI Provide
 
 Open **Automations** in the sidebar and click **Create Automation**. The wizard has six steps:
 
-1. **Basics** — a name, and which job board (Greenhouse, Lever or Ashby) the companies live on.
+1. **Basics** — a name, and the job board: Greenhouse, Lever, Ashby or Remote job boards.
 2. **Search** — the companies to track, then your filters: target job titles, keywords/skills, locations, and how many listings get full AI analysis per run. This is the step that decides how useful the automation is; see the next two sections.
 3. **Resume** — the resume every discovered job is scored against. Resumes with fewer than two sections are shown greyed out with an alert icon until you fill them in under **Profile**; an attached file does not count.
 4. **Matching** — a match threshold. Only listings whose AI match score reaches it are saved; anything analyzed and scored below it is discarded.
 5. **Schedule** — the hour of the day the automation runs (server time). Only one automation may occupy an hour, so hours already taken are marked **In use** and rejected.
 6. **Review** — confirm and save.
 
-At least one company is required. Everything else has a working default, but defaults alone will not give you good results.
+At least one company is required (or, for a remote search, one job board). Everything else has a working default, but defaults alone will not give you good results.
 
 If you have built a watchlist, the company picker in step 2 shows a **Watched** group at the top listing the companies you watch on that automation's job board, with an **Add all watched** button that selects them in one click. Only companies on the matching board appear — a watchlist spanning all three providers contributes a different subset to each automation.
 

@@ -2,7 +2,9 @@ import { APP_CONSTANTS } from "@/lib/constants";
 import type { CreateAutomationInput } from "@/models/automation.schema";
 import type { AtsConfigValue } from "../AtsSearchStep";
 
-export type AtsKey = "greenhouse" | "lever" | "ashby";
+import { REMOTE_FEEDS, type JobBoard } from "@/models/automation.model";
+
+export type AtsKey = JobBoard;
 
 export const EMPTY_ATS: AtsConfigValue = {
   companies: [],
@@ -13,6 +15,16 @@ export const EMPTY_ATS: AtsConfigValue = {
   topK: APP_CONSTANTS.MAX_JOBS_PER_RUN,
   saveUnanalyzed: true,
 };
+
+// The remote board starts with every feed on: there is no list to build first.
+export const EMPTY_REMOTE: AtsConfigValue = {
+  ...EMPTY_ATS,
+  companies: REMOTE_FEEDS.map(({ name, token }) => ({ name, token })),
+};
+
+export function emptyConfigFor(board: JobBoard): AtsConfigValue {
+  return board === "remote" ? EMPTY_REMOTE : EMPTY_ATS;
+}
 
 export const STEPS = [
   { id: "basics", title: "Basics", description: "Name your automation" },
@@ -34,7 +46,7 @@ export function parseEditSourceConfig(
   if (!sc) return undefined;
   try {
     const parsed = JSON.parse(sc);
-    return parsed?.greenhouse || parsed?.lever || parsed?.ashby
+    return parsed?.greenhouse || parsed?.lever || parsed?.ashby || parsed?.remote
       ? parsed
       : undefined;
   } catch {

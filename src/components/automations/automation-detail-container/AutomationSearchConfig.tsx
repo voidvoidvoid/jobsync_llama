@@ -4,7 +4,11 @@ import { useState } from "react";
 import { ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import type { JobBoard, LeverSourceConfig } from "@/models/automation.model";
+import {
+  isRemoteBoard,
+  type JobBoard,
+  type LeverSourceConfig,
+} from "@/models/automation.model";
 import { companyBoardUrl } from "@/lib/atsBoardUrl";
 import { APP_CONSTANTS } from "@/lib/constants";
 
@@ -61,7 +65,9 @@ export function AutomationSearchConfig({
       {showSearchConfig && (
         <div className="mt-4 pt-4 border-t grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="col-span-2 md:col-span-4">
-            <p className="text-sm text-muted-foreground">Companies</p>
+            <p className="text-sm text-muted-foreground">
+              {isRemoteBoard(jobBoard) ? "Job boards" : "Companies"}
+            </p>
             {greenhouseConfig.companies?.length ? (
               <div className="mt-1 flex flex-wrap gap-1">
                 {greenhouseConfig.companies.map((c) => (
@@ -71,8 +77,12 @@ export function AutomationSearchConfig({
                       href={companyBoardUrl(jobBoard, c)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      aria-label={`Open ${c.name} job board`}
-                      title="Open job board"
+                      aria-label={
+                        isRemoteBoard(jobBoard)
+                          ? `Open ${c.name}`
+                          : `Open ${c.name} job board`
+                      }
+                      title={isRemoteBoard(jobBoard) ? `Open ${c.name}` : "Open job board"}
                       className="text-muted-foreground hover:text-foreground"
                     >
                       <ExternalLink className="h-3 w-3" />

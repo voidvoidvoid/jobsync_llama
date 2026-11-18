@@ -5,14 +5,26 @@ import type { JobDetails } from "../types";
 // once a company is resolved so runtime fetches never re-probe regions.
 export type AtsHost = "default" | "eu";
 
+// What the user is looking for. Company boards return everything and ignore
+// it; keyword-searched feeds (the remote board) query with it.
+export interface AtsSearchQuery {
+  targetTitles: string[];
+  keywords: string[];
+}
+
 export interface AtsProvider {
   id: JobBoard;
   label: string; // display name shown in the wizard/detail UI
+  // What one entry of `companies` is called in run logs. Default "companies".
+  sourceNoun?: string;
   // Fetch a watchlist with bounded concurrency + per-token isolation.
   search(
     companies: { name: string; token: string; host?: AtsHost }[],
+    query?: AtsSearchQuery,
   ): Promise<{
     jobs: JobDetails[];
     errors: { token: string; reason: string }[];
   }>;
+  // Replaces the default strict-location test (see rank.ts locationMatches).
+  locationMatches?: (jobLocation: string, wanted: string[]) => boolean;
 }

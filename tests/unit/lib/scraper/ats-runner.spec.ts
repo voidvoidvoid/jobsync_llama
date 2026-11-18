@@ -40,6 +40,13 @@ vi.mock("@/lib/scraper/lever", () => ({
   searchLeverJobs: vi.fn(),
 }));
 
+vi.mock("@/lib/scraper/remote", () => ({
+  searchRemoteFeeds: vi.fn(),
+  remoteLocationMatches: (location: string, wanted: string[]) =>
+    /worldwide/i.test(location) ||
+    wanted.some((w) => location.toLowerCase().includes(w.toLowerCase())),
+}));
+
 vi.mock("@/lib/api-key-resolver", () => ({
   resolveApiKey: vi.fn().mockResolvedValue(undefined),
 }));
@@ -62,6 +69,7 @@ vi.mock("@/lib/ai", async (orig) => {
 import { runAutomation } from "@/lib/scraper/runner";
 import { searchGreenhouseJobs } from "@/lib/scraper/greenhouse";
 import { searchLeverJobs } from "@/lib/scraper/lever";
+import { searchRemoteFeeds } from "@/lib/scraper/remote";
 import { generateText } from "ai";
 import { recordRunNotifications } from "@/lib/notifications/record";
 import type { Automation } from "@/models/automation.model";
@@ -162,6 +170,100 @@ describe("runAutomation (lever)", () => {
       { name: "Acme", token: "acme", host: "eu" },
     ]);
     expect(result.jobsSaved).toBe(1);
+  });
+
+  describe("remote job boards", () => {
+    const remoteAutomation: Automation = {
+      ...leverAutomation,
+      id: "auto-remote",
+      jobBoard: "remote",
+      sourceConfig: JSON.stringify({
+        remote: {
+          companies: [
+            { name: "Himalayas", token: "himalayas" },
+            { name: "Jobicy", token: "jobicy" },
+          ],
+          targetTitles: ["Frontend Engineer"],
+          keywords: ["React"],
+          locations: ["United States"],
+          strictLocation: true,
+        },
+      }),
+    };
+
+    it("searches the feeds with the titles and keywords, and no company list", async () => {
+      (searchRemoteFeeds as any).mockResolvedValue({
+        jobs: [
+          makeJob("Frontend Engineer", "React", {
+            location: "Worldwide",
+            source: "Himalayas",
+            workplaceType: "REMOTE",
+          }),
+        ],
+        errors: [],
+      });
+
+      const result = await runAutomation(remoteAutomation);
+
+      expect(result.status).toBe("completed");
+      expect((searchLeverJobs as any).mock.calls.length).toBe(0);
+      expect((searchRemoteFeeds as any).mock.calls[0]).toEqual([
+        [
+          { name: "Himalayas", token: "himalayas" },
+          { name: "Jobicy", token: "jobicy" },
+        ],
+        { targetTitles: ["Frontend Engineer"], keywords: ["React"] },
+      ]);
+      expect(result.jobsSaved).toBe(1);
+      expect((prisma.job.create as any).mock.calls[0][0].data.workplaceType).toBe(
+        "REMOTE",
+      );
+    });
+
+    it("records the feed, not the board, as the job's source", async () => {
+      (prisma.jobSource.findUnique as any).mockResolvedValue(null);
+      (prisma.jobSource.create as any).mockResolvedValue({ id: "src-new" });
+      (searchRemoteFeeds as any).mockResolvedValue({
+        jobs: [
+          makeJob("Frontend Engineer", "React", {
+            location: "Worldwide",
+            source: "Himalayas",
+          }),
+        ],
+        errors: [],
+      });
+
+      await runAutomation(remoteAutomation);
+
+      const created = (prisma.jobSource.create as any).mock.calls[0][0];
+      expect(created.data.label).toBe("Himalayas");
+    });
+
+    it("drops roles restricted to other places but keeps worldwide ones", async () => {
+      (searchRemoteFeeds as any).mockResolvedValue({
+        jobs: [
+          makeJob("Frontend Engineer", "React", { location: "Worldwide" }),
+          makeJob("Frontend Engineer", "React", { location: "Germany" }),
+        ],
+        errors: [],
+      });
+
+      const result = await runAutomation(remoteAutomation);
+
+      expect(result.jobsSaved).toBe(1);
+    });
+
+    it("completes with errors when one feed is down", async () => {
+      (searchRemoteFeeds as any).mockResolvedValue({
+        jobs: [makeJob("Frontend Engineer", "React", { location: "Worldwide" })],
+        errors: [{ token: "jobicy", reason: "Jobicy returned 503" }],
+      });
+
+      const result = await runAutomation(remoteAutomation);
+
+      expect(result.status).toBe("completed_with_errors");
+      expect(result.jobsSaved).toBe(1);
+    });
   });
 
   it("does not save an analyzed job scoring below the match threshold", async () => {

@@ -103,4 +103,41 @@ describe("CreateAutomationSchema conditional validation", () => {
     });
     expect(result.success).toBe(true);
   });
+
+  it("remote requires at least one job board", () => {
+    const result = CreateAutomationSchema.safeParse({
+      ...base,
+      jobBoard: "remote",
+      sourceConfig: { remote: { companies: [] } },
+    });
+    expect(result.success).toBe(false);
+    expect(!result.success && result.error.issues[0].message).toBe(
+      "Select at least one job board",
+    );
+  });
+
+  it("remote passes with a known feed and no company list", () => {
+    const result = CreateAutomationSchema.safeParse({
+      ...base,
+      jobBoard: "remote",
+      sourceConfig: {
+        remote: {
+          companies: [{ name: "Himalayas", token: "himalayas" }],
+          keywords: ["Kubernetes"],
+        },
+      },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("remote rejects a feed it does not know", () => {
+    const result = CreateAutomationSchema.safeParse({
+      ...base,
+      jobBoard: "remote",
+      sourceConfig: {
+        remote: { companies: [{ name: "Evil", token: "evil.example.com" }] },
+      },
+    });
+    expect(result.success).toBe(false);
+  });
 });

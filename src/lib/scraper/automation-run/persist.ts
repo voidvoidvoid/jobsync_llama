@@ -37,7 +37,7 @@ export async function persistDiscoveredJob(
     location: job.location,
     description: job.description,
     sourceUrl: normalizeJobUrl(job.url),
-    sourceBoard: automation.jobBoard,
+    sourceBoard: job.source ?? automation.jobBoard,
     employmentType: job.employmentType,
     isRemote: job.isRemote,
     workplaceType: job.workplaceType,

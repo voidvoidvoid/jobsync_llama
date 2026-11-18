@@ -15,7 +15,7 @@ import { toastSuccess, toastError } from "@/lib/toast";
 import type { AutomationWithResume, JobBoard } from "@/models/automation.model";
 import type { AtsConfigValue } from "../AtsSearchStep";
 import {
-  EMPTY_ATS,
+  emptyConfigFor,
   STEPS,
   parseEditSourceConfig,
   type AtsKey,
@@ -141,7 +141,22 @@ export function useWizardForm({
 
   const atsKey: AtsKey = formValues.jobBoard;
   const atsConfig: AtsConfigValue =
-    formValues.sourceConfig?.[atsKey] ?? EMPTY_ATS;
+    formValues.sourceConfig?.[atsKey] ?? emptyConfigFor(atsKey);
+
+  // The remote board's default (every feed on) is only a display fallback
+  // until it is written to the form; without this, a user who changes nothing
+  // on the Search step would submit no source at all.
+  const needsRemoteDefault =
+    open && atsKey === "remote" && !formValues.sourceConfig?.remote;
+  useEffect(() => {
+    if (needsRemoteDefault) {
+      form.setValue(
+        "sourceConfig",
+        { remote: emptyConfigFor("remote") } as CreateAutomationInput["sourceConfig"],
+        { shouldValidate: true },
+      );
+    }
+  }, [needsRemoteDefault, form]);
 
   const canGoNext = () => {
     switch (step) {

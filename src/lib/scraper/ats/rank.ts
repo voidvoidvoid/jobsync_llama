@@ -26,7 +26,7 @@ function tokenize(value: string): string[] {
 }
 
 // Whole-term match with word boundaries so "react" does not match "reactive".
-function termInText(text: string, term: string): boolean {
+export function termInText(text: string, term: string): boolean {
   const clean = term.trim().toLowerCase();
   if (!clean) return false;
   const escaped = clean.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");

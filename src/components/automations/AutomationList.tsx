@@ -35,7 +35,7 @@ import {
   Zap,
 } from "lucide-react";
 import type { AutomationWithResume } from "@/models/automation.model";
-import { isRetiredBoard } from "@/models/automation.model";
+import { isRetiredBoard, jobBoardLabel } from "@/models/automation.model";
 import {
   deleteAutomation,
   pauseAutomation,
@@ -154,8 +154,8 @@ export function AutomationList({
                   >
                     {automation.name}
                   </Link>
-                  <Badge variant="outline" className="capitalize">
-                    {automation.jobBoard}
+                  <Badge variant="outline">
+                    {jobBoardLabel(automation.jobBoard)}
                   </Badge>
                   {retired ? (
                     <Badge variant="destructive">Retired</Badge>

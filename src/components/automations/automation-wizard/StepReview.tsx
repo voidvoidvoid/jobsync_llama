@@ -4,6 +4,7 @@ import { APP_CONSTANTS } from "@/lib/constants";
 import type { CreateAutomationInput } from "@/models/automation.schema";
 import type { AtsConfigValue } from "../AtsSearchStep";
 import type { WizardResume } from "./wizardConfig";
+import { isRemoteBoard, jobBoardLabel } from "@/models/automation.model";
 
 export function StepReview({
   formValues,
@@ -22,12 +23,14 @@ export function StepReview({
       </div>
       <div className="flex justify-between">
         <span className="text-muted-foreground">Job Board</span>
-        <span className="font-medium capitalize">
-          {formValues.jobBoard || "-"}
+        <span className="font-medium">
+          {formValues.jobBoard ? jobBoardLabel(formValues.jobBoard) : "-"}
         </span>
       </div>
       <div className="flex justify-between gap-4">
-        <span className="text-muted-foreground">Companies</span>
+        <span className="text-muted-foreground">
+          {isRemoteBoard(formValues.jobBoard) ? "Searching" : "Companies"}
+        </span>
         <span className="font-medium text-right">
           {atsConfig.companies?.length
             ? atsConfig.companies.map((c) => c.name).join(", ")

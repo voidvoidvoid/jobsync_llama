@@ -30,13 +30,14 @@ export async function runAtsRun(
   signal?: AbortSignal,
 ): Promise<RunnerResult> {
   const label = `[${provider.label}]`;
+  const noun = provider.sourceNoun ?? "companies";
   const config = parseAtsConfig(automation.sourceConfig, automation.jobBoard);
 
   if (!config || config.companies.length === 0) {
     automationLogger.log(
       automation.id,
       "error",
-      `${label} No companies configured`,
+      `${label} No ${noun} configured`,
     );
     automationLogger.endRun(automation.id);
     return await finalizeRun(runId, {
@@ -54,10 +55,13 @@ export async function runAtsRun(
     automationLogger.log(
       automation.id,
       "info",
-      `${label} Fetching ${config.companies.length} companies...`,
+      `${label} Fetching ${config.companies.length} ${noun}...`,
     );
 
-    const { jobs, errors } = await provider.search(config.companies);
+    const { jobs, errors } = await provider.search(config.companies, {
+      targetTitles: config.targetTitles,
+      keywords: config.keywords,
+    });
 
     for (const err of errors) {
       automationLogger.log(
@@ -158,6 +162,7 @@ export async function runAtsRun(
     const pipeline = runAtsPipeline(dedupedJobs, config, resumeSkills, {
       corpus: jobs,
       k: config.topK,
+      locationMatcher: provider.locationMatches,
     });
 
     if (config.strictLocation && config.locations.length > 0) {
@@ -218,6 +223,7 @@ export async function runAtsRun(
       const beforeDedup = runAtsPipeline(jobs, config, resumeSkills, {
         corpus: jobs,
         k: config.topK,
+        locationMatcher: provider.locationMatches,
       });
       let reason: string;
       if (beforeDedup.funnel.relevant > 0) {

@@ -137,3 +137,62 @@ describe("AtsSearchStep batch add", () => {
     expect(toastInfo).toHaveBeenCalledWith(expect.stringMatching(/2 skipped/i));
   });
 });
+
+describe("AtsSearchStep on the remote board", () => {
+  const user = userEvent.setup();
+  const allFeeds = [
+    { name: "Himalayas", token: "himalayas" },
+    { name: "Jobicy", token: "jobicy" },
+    { name: "Remote OK", token: "remoteok" },
+  ];
+
+  it("offers job boards to switch on, not a company picker", () => {
+    render(
+      <AtsSearchStep
+        provider="remote"
+        value={{ companies: allFeeds } as any}
+        onChange={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.queryByRole("button", { name: /search companies/i }),
+    ).not.toBeInTheDocument();
+    for (const name of ["Himalayas", "Jobicy", "Remote OK"]) {
+      expect(screen.getByRole("switch", { name })).toBeChecked();
+    }
+    expect(screen.getByText("Where you can work from")).toBeInTheDocument();
+  });
+
+  it("removes a job board that is switched off", async () => {
+    const onChange = vi.fn();
+    render(
+      <AtsSearchStep
+        provider="remote"
+        value={{ companies: allFeeds } as any}
+        onChange={onChange}
+      />,
+    );
+
+    await user.click(screen.getByRole("switch", { name: "Jobicy" }));
+
+    expect(onChange.mock.calls[0][0].companies).toEqual([
+      { name: "Himalayas", token: "himalayas" },
+      { name: "Remote OK", token: "remoteok" },
+    ]);
+  });
+
+  it("says so when every job board is off", () => {
+    render(
+      <AtsSearchStep
+        provider="remote"
+        value={{ companies: [] } as any}
+        onChange={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByText("Turn on at least one job board."),
+    ).toBeInTheDocument();
+  });
+});

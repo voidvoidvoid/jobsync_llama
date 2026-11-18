@@ -9,6 +9,9 @@ export interface JobDetails {
   employmentType?: string;
   isRemote?: boolean;
   workplaceType?: string;
+  // Where the listing came from when one board reads several feeds
+  // ("Himalayas"). Saved as the job's source in place of the board id.
+  source?: string;
 }
 
 export type ScraperError =

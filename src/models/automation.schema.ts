@@ -4,7 +4,7 @@ import { APP_CONSTANTS } from "@/lib/constants";
 // network code into the client bundle via this file's client consumers.
 import { ATS_TOKEN_REGEX } from "@/lib/scraper/utils";
 
-export const JobBoardSchema = z.enum(["greenhouse", "lever", "ashby"]);
+export const JobBoardSchema = z.enum(["greenhouse", "lever", "ashby", "remote"]);
 
 export const AutomationStatusSchema = z.enum(["active", "paused"]);
 
@@ -62,11 +62,28 @@ export const AshbySourceConfigSchema = GreenhouseSourceConfigSchema.extend({
     .max(APP_CONSTANTS.ATS_MAX_COMPANIES),
 });
 
+// The remote board's "companies" are the feeds to read; only known feed ids
+// are accepted, so a saved config can never point the fetcher elsewhere.
+export const RemoteFeedSchema = z.object({
+  name: z.string().min(1).max(200),
+  token: z.enum(["himalayas", "jobicy", "remoteok"]),
+});
+
+export const RemoteSourceConfigSchema = GreenhouseSourceConfigSchema.extend({
+  companies: z.array(RemoteFeedSchema).max(3),
+});
+
 export const SourceConfigSchema = z.object({
   greenhouse: GreenhouseSourceConfigSchema.optional(),
   lever: LeverSourceConfigSchema.optional(),
   ashby: AshbySourceConfigSchema.optional(),
+  remote: RemoteSourceConfigSchema.optional(),
 });
+
+const noSourceMessage = (jobBoard: string) =>
+  jobBoard === "remote"
+    ? "Select at least one job board"
+    : "Select at least one company";
 
 // Only a malformed id gets the custom text; a missing one keeps Zod's own.
 const invalidResume = (issue: { code: string }) =>
@@ -89,7 +106,7 @@ export const CreateAutomationSchema = z
       ctx.addIssue({
         code: "custom",
         path: ["sourceConfig", data.jobBoard, "companies"],
-        message: "Select at least one company",
+        message: noSourceMessage(data.jobBoard),
       });
     }
   });
@@ -112,7 +129,7 @@ export const UpdateAutomationSchema = z
       ctx.addIssue({
         code: "custom",
         path: ["sourceConfig", data.jobBoard, "companies"],
-        message: "Select at least one company",
+        message: noSourceMessage(data.jobBoard),
       });
     }
   });

@@ -36,7 +36,13 @@ export function runAtsPipeline(
   fetchedJobs: JobDetails[],
   config: PipelineConfig,
   resumeSkills: string[],
-  options?: { k?: number; cap?: number; corpus?: JobDetails[] },
+  options?: {
+    k?: number;
+    cap?: number;
+    corpus?: JobDetails[];
+    // Board-specific strict-location test; defaults to locationMatches
+    locationMatcher?: (jobLocation: string, wanted: string[]) => boolean;
+  },
 ): PipelineResult {
   const k = options?.k ?? APP_CONSTANTS.MAX_JOBS_PER_RUN;
   const cap = options?.cap ?? APP_CONSTANTS.ATS_LISTING_CAP;
@@ -48,9 +54,10 @@ export function runAtsPipeline(
   const idf = buildIdf(options?.corpus ?? fetchedJobs);
 
   const gateActive = config.strictLocation && config.locations.length > 0;
+  const matchesLocation = options?.locationMatcher ?? locationMatches;
   const located = gateActive
     ? fetchedJobs.filter((job) =>
-        locationMatches(job.location, config.locations),
+        matchesLocation(job.location, config.locations),
       )
     : null;
 

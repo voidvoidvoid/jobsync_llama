@@ -83,6 +83,27 @@ describe("useWizardForm subscriptions", () => {
     expect(result.current.step).toBe(0);
   });
 
+  it("turns every remote job board on when the remote board is chosen", async () => {
+    const { result } = renderHook(() => useWizardForm(props));
+    act(() => result.current.form.setValue("name", "Remote roles"));
+    act(() => result.current.nextStep());
+    expect(result.current.canGoNext()).toBe(false);
+
+    act(() => result.current.form.setValue("jobBoard", "remote"));
+
+    // No company list to build: the Search step is passable straight away...
+    expect(result.current.atsKey).toBe("remote");
+    expect(result.current.canGoNext()).toBe(true);
+    // ...and the default is written to the form, so it is what gets submitted
+    await waitFor(() =>
+      expect(result.current.formValues.sourceConfig?.remote?.companies).toEqual([
+        { name: "Himalayas", token: "himalayas" },
+        { name: "Jobicy", token: "jobicy" },
+        { name: "Remote OK", token: "remoteok" },
+      ]),
+    );
+  });
+
   it("reflects edit resets and defaults when the permanently mounted wizard reopens", () => {
     const { result, rerender } = renderHook((p) => useWizardForm(p), { initialProps: props });
     rerender({ ...props, editAutomation: automation });
