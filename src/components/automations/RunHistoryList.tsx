@@ -47,6 +47,8 @@ interface RunHistoryListProps {
   loadingMore: boolean;
   onLoadMore: () => void;
   onDelete?: () => void;
+  // AI Matching runs count jobs scored, not jobs found and saved
+  aiMatch?: boolean;
 }
 
 function parseFunnel(funnelStats: string | null): FunnelStage[] {
@@ -108,6 +110,7 @@ export function RunHistoryList({
   loadingMore,
   onLoadMore,
   onDelete,
+  aiMatch = false,
 }: RunHistoryListProps) {
   const [deleteRunId, setDeleteRunId] = useState<string | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -176,11 +179,21 @@ export function RunHistoryList({
                 <TableHead>Status</TableHead>
                 <TableHead>Started</TableHead>
                 <TableHead>Duration</TableHead>
-                <TableHead className="text-center">Searched</TableHead>
-                <TableHead className="text-center">New</TableHead>
-                <TableHead className="text-center">Processed</TableHead>
-                <TableHead className="text-center">Matched</TableHead>
-                <TableHead className="text-center">Saved</TableHead>
+                <TableHead className="text-center">
+                  {aiMatch ? "Unmatched" : "Searched"}
+                </TableHead>
+                <TableHead className="text-center">
+                  {aiMatch ? "Selected" : "New"}
+                </TableHead>
+                <TableHead className="text-center">
+                  {aiMatch ? "Scored" : "Processed"}
+                </TableHead>
+                <TableHead className="text-center">
+                  {aiMatch ? "Strong" : "Matched"}
+                </TableHead>
+                {!aiMatch && (
+                  <TableHead className="text-center">Saved</TableHead>
+                )}
                 <TableHead>Error</TableHead>
                 <TableHead />
               </TableRow>
@@ -228,9 +241,11 @@ export function RunHistoryList({
                       <TableCell className="text-center">
                         {run.jobsMatched}
                       </TableCell>
-                      <TableCell className="text-center">
-                        <span className="font-medium">{run.jobsSaved}</span>
-                      </TableCell>
+                      {!aiMatch && (
+                        <TableCell className="text-center">
+                          <span className="font-medium">{run.jobsSaved}</span>
+                        </TableCell>
+                      )}
                       <TableCell>
                         {(run.errorMessage || run.blockedReason) && (
                           <Badge
@@ -254,7 +269,7 @@ export function RunHistoryList({
                     </TableRow>
                     {funnel.length > 0 && (
                       <TableRow className="hover:bg-transparent border-0">
-                        <TableCell colSpan={10} className="pt-0 pb-3">
+                        <TableCell colSpan={aiMatch ? 9 : 10} className="pt-0 pb-3">
                           <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
                             {funnel.map((stage, i) => (
                               <Fragment key={stage.key}>

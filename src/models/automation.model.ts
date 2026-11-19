@@ -14,8 +14,63 @@ export type DiscoveryStatus = "new" | "accepted" | "dismissed";
 // Company job boards: one board per employer, picked from a directory.
 export type AtsBoard = "greenhouse" | "lever" | "ashby";
 // "remote" is the open search: public remote-job feeds queried by keyword,
-// with no company list.
-export type JobBoard = AtsBoard | "remote";
+// with no company list. "ai-match" is not a job board at all: it searches
+// nothing, and scores jobs already saved that have no AI match yet.
+export type SearchBoard = AtsBoard | "remote";
+export type JobBoard = SearchBoard | "ai-match";
+
+// Settings of an AI Matching automation (sourceConfig["ai-match"]).
+export interface AiMatchConfig {
+  // How many unmatched jobs one run scores at most
+  maxJobs: number;
+  // Score the most recently added jobs first (else the oldest first)
+  newestFirst: boolean;
+  // Listings saved by search automations without an AI analysis
+  includeDiscovered: boolean;
+  // Jobs in My Jobs that have no match score
+  includeTracked: boolean;
+  // "job": each job's own resume (its automation's, or the one linked to it),
+  // falling back to this automation's; "automation": always this one's
+  resumeSource: "job" | "automation";
+}
+
+export const AI_MATCH_MAX_JOBS = 200;
+
+export const AI_MATCH_DEFAULTS: AiMatchConfig = {
+  maxJobs: 20,
+  newestFirst: true,
+  includeDiscovered: true,
+  includeTracked: true,
+  resumeSource: "job",
+};
+
+// Tolerant read of a stored config: anything missing or out of range falls
+// back to the default, so an older or hand-edited row still runs.
+export function aiMatchConfig(raw?: Partial<AiMatchConfig> | null): AiMatchConfig {
+  const max = Math.trunc(Number(raw?.maxJobs));
+  return {
+    maxJobs:
+      max >= 1 ? Math.min(max, AI_MATCH_MAX_JOBS) : AI_MATCH_DEFAULTS.maxJobs,
+    newestFirst:
+      typeof raw?.newestFirst === "boolean"
+        ? raw.newestFirst
+        : AI_MATCH_DEFAULTS.newestFirst,
+    includeDiscovered:
+      typeof raw?.includeDiscovered === "boolean"
+        ? raw.includeDiscovered
+        : AI_MATCH_DEFAULTS.includeDiscovered,
+    includeTracked:
+      typeof raw?.includeTracked === "boolean"
+        ? raw.includeTracked
+        : AI_MATCH_DEFAULTS.includeTracked,
+    resumeSource:
+      raw?.resumeSource === "automation" ? "automation" : AI_MATCH_DEFAULTS.resumeSource,
+  };
+}
+
+export function isAiMatchBoard(board: string): boolean {
+  return board === "ai-match";
+}
 
 export interface GreenhouseCompany {
   name: string;
@@ -187,6 +242,7 @@ export interface SourceConfig {
   lever?: LeverSourceConfig;
   ashby?: AshbySourceConfig;
   remote?: RemoteSourceConfig;
+  "ai-match"?: AiMatchConfig;
 }
 
 // Plain, dependency-free board list. Do NOT import this from ats/registry.ts
@@ -194,14 +250,15 @@ export interface SourceConfig {
 // client-imported schema and the scheduler import it here.
 export const ATS_BOARDS: AtsBoard[] = ["greenhouse", "lever", "ashby"];
 
-// Every board an automation can run on (what the scheduler picks up).
-export const JOB_BOARDS: JobBoard[] = [...ATS_BOARDS, "remote"];
+// Every automation type that runs (what the scheduler picks up).
+export const JOB_BOARDS: JobBoard[] = [...ATS_BOARDS, "remote", "ai-match"];
 
 export const JOB_BOARD_LABELS: Record<JobBoard, string> = {
   greenhouse: "Greenhouse",
   lever: "Lever",
   ashby: "Ashby",
   remote: "Remote job boards",
+  "ai-match": "AI Matching",
 };
 
 // Display name for a stored jobBoard value, including retired ones.

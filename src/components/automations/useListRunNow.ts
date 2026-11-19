@@ -17,6 +17,8 @@ type Watch = {
   prevRunId: string | null;
   name: string;
   startedAt: number;
+  // AI Matching runs score saved jobs rather than save new ones
+  aiMatch: boolean;
 };
 
 // "Run now" for the automations list: starts the same background run as the
@@ -45,7 +47,7 @@ export function useListRunNow(onFinished: () => void) {
     setIn(setRunning, id, false);
   }, []);
 
-  const runNow = useCallback(async (id: string, name: string) => {
+  const runNow = useCallback(async (id: string, name: string, aiMatch = false) => {
     setIn(setStarting, id, true);
     try {
       // Note the latest run first, so the new run can be told apart from it
@@ -62,7 +64,7 @@ export function useListRunNow(onFinished: () => void) {
       const data = await response.json().catch(() => ({}));
 
       if (response.ok && data.success) {
-        watches.current.set(id, { prevRunId, name, startedAt: Date.now() });
+        watches.current.set(id, { prevRunId, name, startedAt: Date.now(), aiMatch });
         setIn(setRunning, id, true);
         toastSuccess(
           "You can leave this page; the run carries on.",
@@ -74,6 +76,7 @@ export function useListRunNow(onFinished: () => void) {
           prevRunId: null,
           name,
           startedAt: Date.now(),
+          aiMatch,
         });
         setIn(setRunning, id, true);
         toastError(
@@ -118,12 +121,16 @@ export function useListRunNow(onFinished: () => void) {
           stopWatching(id);
           // finalizeRun writes notifications before the run row turns terminal
           refreshNotifications();
-          const saved = `Saved ${latest.jobsSaved} new ${latest.jobsSaved === 1 ? "job" : "jobs"}`;
+          const saved = watch.aiMatch
+            ? `Scored ${latest.jobsProcessed} ${latest.jobsProcessed === 1 ? "job" : "jobs"}, ${latest.jobsMatched} strong ${latest.jobsMatched === 1 ? "match" : "matches"}`
+            : `Saved ${latest.jobsSaved} new ${latest.jobsSaved === 1 ? "job" : "jobs"}`;
           if (latest.status === "completed") {
             toastSuccess(saved, `“${watch.name}” finished`);
           } else if (latest.status === "completed_with_errors") {
             toastSuccess(
-              `${saved}. Some job boards failed; see notifications.`,
+              watch.aiMatch
+                ? `${saved}. Some jobs could not be scored; see the run log.`
+                : `${saved}. Some job boards failed; see notifications.`,
               `“${watch.name}” finished with errors`,
             );
           } else if (latest.status === "cancelled") {

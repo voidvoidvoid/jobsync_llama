@@ -19,7 +19,12 @@ import {
 import type { AutomationWithResume } from "@/models/automation.model";
 import { AtsSearchStep } from "./AtsSearchStep";
 import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
-import { STEPS, type WizardResume } from "./automation-wizard/wizardConfig";
+import {
+  STEPS,
+  stepDescription,
+  type WizardResume,
+} from "./automation-wizard/wizardConfig";
+import { StepAiMatch } from "./automation-wizard/StepAiMatch";
 import { useWizardForm } from "./automation-wizard/useWizardForm";
 import { StepBasics } from "./automation-wizard/StepBasics";
 import { StepResume } from "./automation-wizard/StepResume";
@@ -51,6 +56,7 @@ export function AutomationWizard({
     isSubmitting,
     atsKey,
     atsConfig,
+    matchConfig,
     takenHours,
     canGoNext,
     nextStep,
@@ -75,7 +81,8 @@ export function AutomationWizard({
             {editAutomation ? "Edit Automation" : "Create Automation"}
           </DialogTitle>
           <DialogDescription>
-            Step {step + 1} of {STEPS.length}: {STEPS[step].description}
+            Step {step + 1} of {STEPS.length}:{" "}
+            {stepDescription(step, formValues.jobBoard)}
           </DialogDescription>
         </DialogHeader>
 
@@ -116,25 +123,42 @@ export function AutomationWizard({
               </div>
 
               <div className={step === 1 ? "space-y-4" : "hidden"}>
-                <AtsSearchStep
-                  provider={formValues.jobBoard}
-                  value={atsConfig}
-                  onChange={(next) =>
-                    form.setValue(
-                      "sourceConfig",
-                      { [atsKey]: next } as CreateAutomationInput["sourceConfig"],
-                      { shouldValidate: true },
-                    )
-                  }
-                />
+                {atsKey === "ai-match" ? (
+                  <StepAiMatch
+                    value={matchConfig}
+                    onChange={(next) =>
+                      form.setValue(
+                        "sourceConfig",
+                        { "ai-match": next } as CreateAutomationInput["sourceConfig"],
+                        { shouldValidate: true },
+                      )
+                    }
+                  />
+                ) : (
+                  <AtsSearchStep
+                    provider={formValues.jobBoard}
+                    value={atsConfig}
+                    onChange={(next) =>
+                      form.setValue(
+                        "sourceConfig",
+                        { [atsKey]: next } as CreateAutomationInput["sourceConfig"],
+                        { shouldValidate: true },
+                      )
+                    }
+                  />
+                )}
               </div>
 
               <div className={step === 2 ? "space-y-4" : "hidden"}>
-                <StepResume form={form} resumes={resumes} />
+                <StepResume
+                  form={form}
+                  resumes={resumes}
+                  aiMatch={atsKey === "ai-match"}
+                />
               </div>
 
               <div className={step === 3 ? "space-y-4" : "hidden"}>
-                <StepMatching form={form} />
+                <StepMatching form={form} aiMatch={atsKey === "ai-match"} />
               </div>
 
               <div className={step === 4 ? "space-y-4" : "hidden"}>
@@ -145,6 +169,7 @@ export function AutomationWizard({
                 <StepReview
                   formValues={formValues}
                   atsConfig={atsConfig}
+                  matchConfig={matchConfig}
                   selectedResume={selectedResume}
                 />
               </div>

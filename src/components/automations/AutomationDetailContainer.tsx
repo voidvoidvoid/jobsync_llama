@@ -5,7 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTabQueryParam } from "@/hooks/useTabQueryParam";
 import { Badge } from "@/components/ui/badge";
-import { isRetiredBoard } from "@/models/automation.model";
+import { isRetiredBoard, isAiMatchBoard } from "@/models/automation.model";
 import { DiscoveredJobsList } from "@/components/automations/DiscoveredJobsList";
 import { DiscoveredJobDetail } from "@/components/automations/DiscoveredJobDetail";
 import { RunHistoryList } from "@/components/automations/RunHistoryList";
@@ -124,6 +124,7 @@ export function AutomationDetailContainer({
   const resumeMissing = !automation.resume;
   const newJobsCount = jobStatusCounts.new;
   const retired = isRetiredBoard(automation.jobBoard);
+  const aiMatch = isAiMatchBoard(automation.jobBoard);
   // The button must reflect the real run state, not just this page instance's
   // runNowLoading: after navigating away and back, runNowLoading resets but the
   // SSE reports the run is still live, so fall back to logData.isRunning.
@@ -154,19 +155,26 @@ export function AutomationDetailContainer({
         isRunning={logData.isRunning}
         totalJobs={totalJobs}
         newJobsCount={newJobsCount}
+        aiMatch={aiMatch}
       />
 
-      <Tabs value={activeTab} onValueChange={handleTabChange}>
+      {/* AI Matching has no Discovered Jobs tab; a stale ?tab=jobs falls back */}
+      <Tabs
+        value={aiMatch && activeTab === "jobs" ? "logs" : activeTab}
+        onValueChange={handleTabChange}
+      >
         <TabsList>
           <TabsTrigger value="logs">Logs</TabsTrigger>
-          <TabsTrigger value="jobs">
-            Discovered Jobs
-            {newJobsCount > 0 && (
-              <Badge variant="secondary" className="ml-2">
-                {newJobsCount}
-              </Badge>
-            )}
-          </TabsTrigger>
+          {!aiMatch && (
+            <TabsTrigger value="jobs">
+              Discovered Jobs
+              {newJobsCount > 0 && (
+                <Badge variant="secondary" className="ml-2">
+                  {newJobsCount}
+                </Badge>
+              )}
+            </TabsTrigger>
+          )}
           <TabsTrigger value="history">Run History</TabsTrigger>
         </TabsList>
         <TabsContent value="logs" className="mt-4">
@@ -197,6 +205,7 @@ export function AutomationDetailContainer({
             loadingMore={runsLoadingMore}
             onLoadMore={loadMoreRuns}
             onDelete={loadData}
+            aiMatch={aiMatch}
           />
         </TabsContent>
       </Tabs>

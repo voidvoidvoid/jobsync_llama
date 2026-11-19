@@ -38,6 +38,16 @@ export const STEPS = [
   { id: "review", title: "Review", description: "Confirm settings" },
 ];
 
+// Step descriptions that differ for an AI Matching automation
+export function stepDescription(step: number, jobBoard?: string): string {
+  if (jobBoard === "ai-match") {
+    if (step === 1) return "Choose which jobs to score";
+    if (step === 2) return "Select a resume to match against";
+    if (step === 3) return "Set the strong-match threshold";
+  }
+  return STEPS[step].description;
+}
+
 export const HOURS = Array.from({ length: 24 }, (_, i) => ({
   value: i,
   label: `${i.toString().padStart(2, "0")}:00`,
@@ -49,7 +59,11 @@ export function parseEditSourceConfig(
   if (!sc) return undefined;
   try {
     const parsed = JSON.parse(sc);
-    return parsed?.greenhouse || parsed?.lever || parsed?.ashby || parsed?.remote
+    return parsed?.greenhouse ||
+      parsed?.lever ||
+      parsed?.ashby ||
+      parsed?.remote ||
+      parsed?.["ai-match"]
       ? parsed
       : undefined;
   } catch {

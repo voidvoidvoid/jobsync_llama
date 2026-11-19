@@ -12,9 +12,16 @@ import {
   updateAutomation,
 } from "@/actions/automation.actions";
 import { toastSuccess, toastError } from "@/lib/toast";
-import type { AutomationWithResume, JobBoard } from "@/models/automation.model";
+import {
+  aiMatchConfig,
+  AI_MATCH_DEFAULTS,
+  type AiMatchConfig,
+  type AutomationWithResume,
+  type JobBoard,
+} from "@/models/automation.model";
 import type { AtsConfigValue } from "../AtsSearchStep";
 import {
+  EMPTY_ATS,
   emptyConfigFor,
   STEPS,
   parseEditSourceConfig,
@@ -140,30 +147,42 @@ export function useWizardForm({
   };
 
   const atsKey: AtsKey = formValues.jobBoard;
-  const atsConfig: AtsConfigValue =
-    formValues.sourceConfig?.[atsKey] ?? emptyConfigFor(atsKey);
+  const isAiMatch = atsKey === "ai-match";
+  // Search automations edit atsConfig; AI Matching edits matchConfig instead
+  const atsConfig: AtsConfigValue = isAiMatch
+    ? EMPTY_ATS
+    : ((formValues.sourceConfig?.[atsKey] as AtsConfigValue | undefined) ??
+      emptyConfigFor(atsKey));
+  const matchConfig: AiMatchConfig = aiMatchConfig(
+    formValues.sourceConfig?.["ai-match"],
+  );
 
-  // The remote board's default (every feed on) is only a display fallback
-  // until it is written to the form; without this, a user who changes nothing
-  // on the Search step would submit no source at all.
-  const needsRemoteDefault =
-    open && atsKey === "remote" && !formValues.sourceConfig?.remote;
+  // The remote board's default (every feed on) and AI Matching's settings are
+  // only display fallbacks until written to the form; without this, a user
+  // who changes nothing on the second step would submit no settings at all.
+  const needsDefault =
+    open &&
+    (atsKey === "remote" || isAiMatch) &&
+    !formValues.sourceConfig?.[atsKey];
   useEffect(() => {
-    if (needsRemoteDefault) {
-      form.setValue(
-        "sourceConfig",
-        { remote: emptyConfigFor("remote") } as CreateAutomationInput["sourceConfig"],
-        { shouldValidate: true },
-      );
-    }
-  }, [needsRemoteDefault, form]);
+    if (!needsDefault) return;
+    form.setValue(
+      "sourceConfig",
+      (atsKey === "remote"
+        ? { remote: emptyConfigFor("remote") }
+        : { "ai-match": { ...AI_MATCH_DEFAULTS } }) as CreateAutomationInput["sourceConfig"],
+      { shouldValidate: true },
+    );
+  }, [needsDefault, atsKey, form]);
 
   const canGoNext = () => {
     switch (step) {
       case 0:
         return (formValues.name?.trim().length ?? 0) > 0;
       case 1:
-        return (atsConfig.companies?.length ?? 0) > 0;
+        return isAiMatch
+          ? matchConfig.includeDiscovered || matchConfig.includeTracked
+          : (atsConfig.companies?.length ?? 0) > 0;
       case 2:
         return (formValues.resumeId?.length ?? 0) > 0;
       case 3:
@@ -217,6 +236,7 @@ export function useWizardForm({
     isSubmitting,
     atsKey,
     atsConfig,
+    matchConfig,
     takenHours,
     canGoNext,
     nextStep,

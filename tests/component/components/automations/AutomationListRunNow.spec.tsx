@@ -210,6 +210,38 @@ describe("AutomationList — Run now", () => {
     expect(screen.getByRole("button", { name: /Run now/ })).toBeDisabled();
   });
 
+  it("reports an AI Matching run as jobs scored", async () => {
+    runsReturn(
+      [],
+      [{ id: "new", status: "completed", jobsSaved: 0, jobsProcessed: 12, jobsMatched: 3 }],
+    );
+    respond(200, { success: true, started: true });
+    const { user } = setup({
+      jobBoard: "ai-match",
+      sourceConfig: JSON.stringify({
+        "ai-match": {
+          maxJobs: 12,
+          newestFirst: true,
+          includeDiscovered: true,
+          includeTracked: false,
+          resumeSource: "job",
+        },
+      }),
+    });
+
+    // Its row describes what it scores rather than companies and titles
+    expect(screen.getByText(/up to 12, newest first/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /Run now/ }));
+    await screen.findByRole("link", { name: /Running/ });
+    await poll();
+
+    expect(toastSuccess).toHaveBeenLastCalledWith(
+      "Scored 12 jobs, 3 strong matches",
+      "“Remote data roles” finished",
+    );
+  });
+
   it("is disabled when the automation's resume is missing", () => {
     setup({ resume: null as never });
     expect(screen.getByRole("button", { name: /Run now/ })).toBeDisabled();

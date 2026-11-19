@@ -53,6 +53,23 @@ function renderList(
 }
 
 describe("RunHistoryList", () => {
+  it("labels an AI Matching run's numbers as unmatched, selected, scored and strong", () => {
+    renderList({ aiMatch: true });
+
+    for (const name of ["Unmatched", "Selected", "Scored", "Strong"]) {
+      expect(screen.getByRole("columnheader", { name })).toBeInTheDocument();
+    }
+    // Nothing is saved by such a run
+    expect(screen.queryByRole("columnheader", { name: "Saved" })).toBeNull();
+  });
+
+  it("keeps the search columns for other automations", () => {
+    renderList();
+    for (const name of ["Searched", "New", "Processed", "Matched", "Saved"]) {
+      expect(screen.getByRole("columnheader", { name })).toBeInTheDocument();
+    }
+  });
+
   it("renders runs and the records-count summary", () => {
     const { container } = renderList({
       runs: [makeRun(), makeRun({ id: "run-2" })],

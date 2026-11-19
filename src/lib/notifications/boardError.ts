@@ -19,6 +19,7 @@ const RUN_FAILURE_COPY: Record<string, string> = {
   resume_missing: "The resume this automation uses no longer exists.",
   no_companies: "No companies are on the watchlist.",
   no_job_boards: "No job boards are switched on.",
+  no_match_scope: "No kind of job is selected to score.",
   source_removed: "This job board has been removed. Delete this automation.",
 };
 

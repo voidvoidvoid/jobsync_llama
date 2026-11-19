@@ -132,6 +132,8 @@ export function useAutomationRun({
     return () => clearInterval(interval);
   }, [runNowLoading, refreshJobs]);
 
+  const isAiMatchRun = automation?.jobBoard === "ai-match";
+
   // The run executes in the background on the server, so the /run request
   // returns immediately. Watch the run record until it reaches a terminal
   // status, then surface the outcome and refresh the tabs.
@@ -156,11 +158,16 @@ export function useAutomationRun({
       setRunKey(0);
       // finalizeRun writes notifications before the run row turns terminal.
       refreshNotifications();
+      // AI Matching scores saved jobs rather than saving new ones
+      const summary =
+        isAiMatchRun
+          ? `Scored ${latest.jobsProcessed} jobs, ${latest.jobsMatched} strong matches`
+          : `Saved ${latest.jobsSaved} new jobs`;
       if (latest.status === "cancelled") {
-        toastError(`Saved ${latest.jobsSaved} new jobs`, "Run cancelled");
+        toastError(summary, "Run cancelled");
       } else {
         toastSuccess(
-          `Saved ${latest.jobsSaved} new jobs`,
+          summary,
           "Automation run complete",
         );
       }
@@ -172,7 +179,7 @@ export function useAutomationRun({
       stopped = true;
       clearInterval(interval);
     };
-  }, [runNowLoading, automationId, loadData, refreshNotifications]);
+  }, [runNowLoading, automationId, loadData, refreshNotifications, isAiMatchRun]);
 
   const handleRunNow = async () => {
     if (!automation) return;

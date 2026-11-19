@@ -2,7 +2,11 @@
 // Each module below carries its own "use server"; this file only re-exports so
 // the long-standing "@/actions/automation.actions" import path keeps working.
 
-export { getAutomationsList, getAutomationById } from "./automation/queries";
+export {
+  getAutomationsList,
+  getAutomationById,
+  countUnmatchedJobs,
+} from "./automation/queries";
 
 export {
   createAutomation,

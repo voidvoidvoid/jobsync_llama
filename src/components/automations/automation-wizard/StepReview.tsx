@@ -4,17 +4,58 @@ import { APP_CONSTANTS } from "@/lib/constants";
 import type { CreateAutomationInput } from "@/models/automation.schema";
 import type { AtsConfigValue } from "../AtsSearchStep";
 import type { WizardResume } from "./wizardConfig";
-import { isRemoteBoard, jobBoardLabel } from "@/models/automation.model";
+import {
+  isRemoteBoard,
+  jobBoardLabel,
+  type AiMatchConfig,
+} from "@/models/automation.model";
 
 export function StepReview({
   formValues,
   atsConfig,
+  matchConfig,
   selectedResume,
 }: {
   formValues: CreateAutomationInput;
   atsConfig: AtsConfigValue;
+  matchConfig?: AiMatchConfig;
   selectedResume?: WizardResume;
 }) {
+  if (formValues.jobBoard === "ai-match" && matchConfig) {
+    const kinds = [
+      matchConfig.includeDiscovered && "Listings from search automations",
+      matchConfig.includeTracked && "My Jobs with no score",
+    ].filter(Boolean);
+    const rows: [string, string][] = [
+      ["Name", formValues.name || "-"],
+      ["Type", "AI Matching"],
+      ["Scores", kinds.join(", ") || "-"],
+      ["Jobs per run", `Up to ${matchConfig.maxJobs}`],
+      ["Order", matchConfig.newestFirst ? "Newest first" : "Oldest first"],
+      [
+        "Resume",
+        matchConfig.resumeSource === "job"
+          ? `Each job's own, else ${selectedResume?.title ?? "not selected"}`
+          : (selectedResume?.title ?? "Not selected"),
+      ],
+      ["Strong match at", `${formValues.matchThreshold ?? 80}%`],
+      [
+        "Schedule",
+        `Daily at ${(formValues.scheduleHour ?? 8).toString().padStart(2, "0")}:00`,
+      ],
+    ];
+    return (
+      <div className="rounded-lg border p-4 space-y-3">
+        {rows.map(([label, value]) => (
+          <div key={label} className="flex justify-between gap-4">
+            <span className="text-muted-foreground">{label}</span>
+            <span className="font-medium text-right">{value}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-lg border p-4 space-y-3">
       <div className="flex justify-between">

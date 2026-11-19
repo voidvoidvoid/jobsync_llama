@@ -11,6 +11,7 @@ import type { ResumeWithSections, RunnerResult } from "./automation-run/types";
 import { getUserAiSettings } from "./automation-run/aiSettings";
 import { finalizeRun } from "./automation-run/finalize";
 import { runAtsRun } from "./automation-run/atsRun";
+import { runAiMatchRun } from "./automation-run/aiMatchRun";
 
 export { getUserAiSettings };
 export type { RunnerResult };
@@ -206,6 +207,16 @@ async function runAutomationTraced(
       "success",
       `Resume loaded: ${resume.title}`,
     );
+
+    // AI Matching searches nothing: it scores jobs already saved
+    if (automation.jobBoard === "ai-match") {
+      return await runAiMatchRun(
+        automation,
+        run.id,
+        resume as ResumeWithSections,
+        effectiveSignal,
+      );
+    }
 
     const atsProvider = ATS_PROVIDERS[automation.jobBoard];
     if (!atsProvider) {

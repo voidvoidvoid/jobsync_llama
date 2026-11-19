@@ -1,4 +1,4 @@
-import { CreateAutomationSchema } from "@/models/automation.schema";
+import { CreateAutomationSchema, UpdateAutomationSchema } from "@/models/automation.schema";
 
 const base = {
   name: "Test",
@@ -177,6 +177,61 @@ describe("CreateAutomationSchema conditional validation", () => {
       },
     });
     expect(result.success).toBe(false);
+  });
+
+  describe("ai-match", () => {
+    const config = {
+      maxJobs: 25,
+      newestFirst: true,
+      includeDiscovered: true,
+      includeTracked: false,
+      resumeSource: "job",
+    };
+
+    it("needs no companies or job boards", () => {
+      const result = CreateAutomationSchema.safeParse({
+        ...base,
+        jobBoard: "ai-match",
+        sourceConfig: { "ai-match": config },
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("needs at least one kind of job to score", () => {
+      const result = CreateAutomationSchema.safeParse({
+        ...base,
+        jobBoard: "ai-match",
+        sourceConfig: {
+          "ai-match": { ...config, includeDiscovered: false, includeTracked: false },
+        },
+      });
+      expect(result.success).toBe(false);
+      expect(!result.success && result.error.issues[0].message).toBe(
+        "Choose at least one kind of job to score",
+      );
+    });
+
+    it("needs its settings", () => {
+      const result = CreateAutomationSchema.safeParse({ ...base, jobBoard: "ai-match" });
+      expect(result.success).toBe(false);
+    });
+
+    it.each([0, 201, 2.5])("rejects %s jobs per run", (maxJobs) => {
+      const result = CreateAutomationSchema.safeParse({
+        ...base,
+        jobBoard: "ai-match",
+        sourceConfig: { "ai-match": { ...config, maxJobs } },
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("lets an update switch a search automation to AI Matching", () => {
+      const result = UpdateAutomationSchema.safeParse({
+        jobBoard: "ai-match",
+        sourceConfig: { "ai-match": config },
+      });
+      expect(result.success).toBe(true);
+    });
   });
 
   it("remote rejects a feed it does not know", () => {

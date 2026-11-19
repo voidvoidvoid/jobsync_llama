@@ -15,10 +15,11 @@ stale_after: 2027-09-30
 
 An automation is a saved search that runs once a day and brings new job postings to you. It reads public job listings, drops the ones that have nothing to do with what you asked for, sends the most promising ones to your AI provider to be scored against one of your resumes, and saves the results as **discovered jobs** you can accept into your tracker or dismiss.
 
-The **Job Board** you pick in the first step decides the kind of search:
+The **Job Board** picked first sets the kind:
 
 - **Company boards** — **Greenhouse**, **Lever** or **Ashby**. You choose employers and JobSync reads each one's job board. One automation covers one of the three.
-- **Remote job boards** — a keyword search with no company list. See [Remote Job Search](./remote-job-search.md).
+- **Remote job boards** — keyword search, no company list: [Remote Job Search](./remote-job-search.md).
+- **AI Matching** — scores saved jobs lacking an AI match: [AI Matching](./ai-matching.md).
 
 An automation needs an AI provider and model set under **Settings → AI Provider**, and a resume in your profile to match against.
 

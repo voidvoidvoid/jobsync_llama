@@ -17,6 +17,8 @@ export interface FinalizeData {
   // Forwarded to notifications only; not persisted on AutomationRun.
   boardErrors?: BoardFailure[];
   aiError?: string;
+  // AI Matching runs: jobs the AI could not score (notifications only)
+  aiMatchFailed?: number;
 }
 
 export async function finalizeRun(
@@ -26,7 +28,12 @@ export async function finalizeRun(
   // Before the terminal update: the run watcher refreshes the bell the
   // moment it sees a terminal status.
   await recordRunNotifications(runId, data);
-  const { boardErrors: _boardErrors, aiError: _aiError, ...result } = data;
+  const {
+    boardErrors: _boardErrors,
+    aiError: _aiError,
+    aiMatchFailed: _aiMatchFailed,
+    ...result
+  } = data;
   const run = await db.automationRun.update({
     where: { id: runId },
     data: {

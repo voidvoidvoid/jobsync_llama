@@ -4,7 +4,13 @@ import { APP_CONSTANTS } from "@/lib/constants";
 // network code into the client bundle via this file's client consumers.
 import { ATS_TOKEN_REGEX } from "@/lib/scraper/utils";
 
-export const JobBoardSchema = z.enum(["greenhouse", "lever", "ashby", "remote"]);
+export const JobBoardSchema = z.enum([
+  "greenhouse",
+  "lever",
+  "ashby",
+  "remote",
+  "ai-match",
+]);
 
 export const AutomationStatusSchema = z.enum(["active", "paused"]);
 
@@ -88,12 +94,52 @@ export const RemoteSourceConfigSchema = GreenhouseSourceConfigSchema.extend({
   jsearch: JSearchOptionsSchema.optional(),
 });
 
+export const AiMatchConfigSchema = z.object({
+  maxJobs: z.number().int().min(1).max(200),
+  newestFirst: z.boolean(),
+  includeDiscovered: z.boolean(),
+  includeTracked: z.boolean(),
+  resumeSource: z.enum(["job", "automation"]),
+});
+
 export const SourceConfigSchema = z.object({
   greenhouse: GreenhouseSourceConfigSchema.optional(),
   lever: LeverSourceConfigSchema.optional(),
   ashby: AshbySourceConfigSchema.optional(),
   remote: RemoteSourceConfigSchema.optional(),
+  "ai-match": AiMatchConfigSchema.optional(),
 });
+
+// An AI Matching automation has no companies or job boards: it needs only
+// something to score.
+function checkSource(
+  data: { jobBoard?: string; sourceConfig?: z.infer<typeof SourceConfigSchema> },
+  ctx: z.RefinementCtx,
+) {
+  if (!data.jobBoard) return;
+  if (data.jobBoard === "ai-match") {
+    const cfg = data.sourceConfig?.["ai-match"];
+    if (!cfg || (!cfg.includeDiscovered && !cfg.includeTracked)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["sourceConfig", "ai-match"],
+        message: "Choose at least one kind of job to score",
+      });
+    }
+    return;
+  }
+  const configs = data.sourceConfig as
+    | Record<string, { companies?: unknown[] } | undefined>
+    | undefined;
+  const companies = configs?.[data.jobBoard]?.companies ?? [];
+  if (companies.length < 1) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["sourceConfig", data.jobBoard, "companies"],
+      message: noSourceMessage(data.jobBoard),
+    });
+  }
+}
 
 const noSourceMessage = (jobBoard: string) =>
   jobBoard === "remote"
@@ -115,16 +161,7 @@ export const CreateAutomationSchema = z
     matchThreshold: z.number().min(0).max(100),
     scheduleHour: z.number().min(0).max(23),
   })
-  .superRefine((data, ctx) => {
-    const companies = data.sourceConfig?.[data.jobBoard]?.companies ?? [];
-    if (companies.length < 1) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["sourceConfig", data.jobBoard, "companies"],
-        message: noSourceMessage(data.jobBoard),
-      });
-    }
-  });
+  .superRefine(checkSource);
 
 export const UpdateAutomationSchema = z
   .object({
@@ -137,17 +174,7 @@ export const UpdateAutomationSchema = z
     matchThreshold: z.number().min(0).max(100).optional(),
     scheduleHour: z.number().min(0).max(23).optional(),
   })
-  .superRefine((data, ctx) => {
-    if (!data.jobBoard) return;
-    const companies = data.sourceConfig?.[data.jobBoard]?.companies ?? [];
-    if (companies.length < 1) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["sourceConfig", data.jobBoard, "companies"],
-        message: noSourceMessage(data.jobBoard),
-      });
-    }
-  });
+  .superRefine(checkSource);
 
 export type CreateAutomationInput = z.infer<typeof CreateAutomationSchema>;
 export type UpdateAutomationInput = z.infer<typeof UpdateAutomationSchema>;

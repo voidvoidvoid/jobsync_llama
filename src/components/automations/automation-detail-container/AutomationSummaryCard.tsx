@@ -18,6 +18,7 @@ interface AutomationSummaryCardProps {
   isRunning: boolean;
   totalJobs: number;
   newJobsCount: number;
+  aiMatch?: boolean;
 }
 
 export function AutomationSummaryCard({
@@ -27,6 +28,7 @@ export function AutomationSummaryCard({
   isRunning,
   totalJobs,
   newJobsCount,
+  aiMatch = false,
 }: AutomationSummaryCardProps) {
   return (
     <Card>
@@ -55,7 +57,9 @@ export function AutomationSummaryCard({
             <p className="text-sm font-medium">{jobBoardLabel(automation.jobBoard)}</p>
           </div>
           <div>
-            <p className="text-sm text-muted-foreground">Match Threshold</p>
+            <p className="text-sm text-muted-foreground">
+              {aiMatch ? "Strong match at" : "Match Threshold"}
+            </p>
             <p className="text-sm font-medium">{automation.matchThreshold}%</p>
           </div>
           <div>
@@ -98,17 +102,19 @@ export function AutomationSummaryCard({
                 : "Never"}
             </p>
           </div>
-          <div>
-            <p className="text-sm text-muted-foreground">Discovered Jobs</p>
-            <p className="text-sm font-medium">
-              {totalJobs} total
-              {newJobsCount > 0 && (
-                <Badge variant="secondary" className="ml-2">
-                  {newJobsCount} new
-                </Badge>
-              )}
-            </p>
-          </div>
+          {!aiMatch && (
+            <div>
+              <p className="text-sm text-muted-foreground">Discovered Jobs</p>
+              <p className="text-sm font-medium">
+                {totalJobs} total
+                {newJobsCount > 0 && (
+                  <Badge variant="secondary" className="ml-2">
+                    {newJobsCount} new
+                  </Badge>
+                )}
+              </p>
+            </div>
+          )}
         </div>
 
         <AutomationSearchConfig

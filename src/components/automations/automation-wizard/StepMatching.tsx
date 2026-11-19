@@ -14,8 +14,10 @@ import type { CreateAutomationInput } from "@/models/automation.schema";
 
 export function StepMatching({
   form,
+  aiMatch = false,
 }: {
   form: UseFormReturn<CreateAutomationInput>;
+  aiMatch?: boolean;
 }) {
   return (
     <FormField
@@ -23,7 +25,9 @@ export function StepMatching({
       name="matchThreshold"
       render={({ field }) => (
         <FormItem>
-          <FormLabel>Match Threshold: {field.value}%</FormLabel>
+          <FormLabel>
+            {aiMatch ? "Strong match at" : "Match Threshold"}: {field.value}%
+          </FormLabel>
           <FormControl>
             <Slider
               min={0}
@@ -34,9 +38,9 @@ export function StepMatching({
             />
           </FormControl>
           <FormDescription>
-            Only save listings whose AI match score reaches this threshold.
-            Analyzed listings that score below it are discarded — set it lower
-            to keep more.
+            {aiMatch
+              ? "Jobs scoring at or above this are counted as strong matches in the run summary. Every score is saved either way; nothing is removed."
+              : "Only save listings whose AI match score reaches this threshold. Analyzed listings that score below it are discarded — set it lower to keep more."}
           </FormDescription>
           <FormMessage />
         </FormItem>

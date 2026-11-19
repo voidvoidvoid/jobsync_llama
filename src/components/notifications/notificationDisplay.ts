@@ -64,7 +64,10 @@ export function describeNotification(n: NotificationItem) {
     return {
       icon: "fail" as const,
       title: "Automation failed",
-      lead: plural(p.jobsSaved, "job") + " saved",
+      lead:
+        p.jobsScored !== undefined
+          ? plural(p.jobsScored, "job") + " scored"
+          : plural(p.jobsSaved, "job") + " saved",
       // Reasons may already end in a period ("…no longer exists.").
       detail: ` · ${name} stopped: ${p.reason.replace(/\.$/, "")}${boards}.`,
       hint: null,
@@ -73,6 +76,26 @@ export function describeNotification(n: NotificationItem) {
   }
 
   const p = n.payload as RunPayload;
+  if (p.aiMatch) {
+    const m = p.aiMatch;
+    const matchParts: string[] = [];
+    if (m.strong > 0)
+      matchParts.push(`${m.strong} strong ${m.strong === 1 ? "match" : "matches"}`);
+    if (m.failed > 0) matchParts.push(`${m.failed} could not be scored`);
+    if (p.aiError) matchParts.push("AI unavailable, stopped early");
+    matchParts.push(`${m.left} still unmatched`);
+    return {
+      icon: "run" as const,
+      title: `${name} finished`,
+      lead: m.scored > 0 ? `${plural(m.scored, "job")} scored` : "Nothing to score",
+      detail: ` · ${matchParts.join(" · ")}`,
+      hint: null,
+      link:
+        m.scored > 0
+          ? { label: "See your jobs", href: "/dashboard/myjobs" }
+          : null,
+    };
+  }
   const parts = [` · ${p.jobsSearched} scanned`];
   if (p.belowThreshold > 0) parts.push(`${p.belowThreshold} below match threshold`);
   if (p.boardsFailed > 0) parts.push(`${plural(p.boardsFailed, "board")} failed`);

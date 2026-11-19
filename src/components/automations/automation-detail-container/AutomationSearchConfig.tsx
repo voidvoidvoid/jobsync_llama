@@ -5,6 +5,7 @@ import { ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
+  aiMatchConfig,
   jsearchOptions,
   type JSearchOptions,
   isRemoteBoard,
@@ -45,6 +46,43 @@ export function AutomationSearchConfig({
   const greenhouseConfig = retired
     ? null
     : parseAtsConfig(sourceConfig, jobBoard);
+
+  if (!retired && jobBoard === "ai-match") {
+    let stored = null;
+    try {
+      stored = JSON.parse(sourceConfig ?? "{}")?.["ai-match"] ?? null;
+    } catch {}
+    const m = aiMatchConfig(stored);
+    const rows: [string, string][] = [
+      [
+        "Scores",
+        [
+          m.includeDiscovered && "Listings from search automations",
+          m.includeTracked && "My Jobs with no score",
+        ]
+          .filter(Boolean)
+          .join(", "),
+      ],
+      ["Jobs per run", `Up to ${m.maxJobs}`],
+      ["Order", m.newestFirst ? "Newest first" : "Oldest first"],
+      [
+        "Resume",
+        m.resumeSource === "job"
+          ? "Each job's own, else this automation's"
+          : "Always this automation's",
+      ],
+    ];
+    return (
+      <div className="mt-4 pt-4 border-t grid grid-cols-2 md:grid-cols-4 gap-4">
+        {rows.map(([label, value]) => (
+          <div key={label}>
+            <p className="text-sm text-muted-foreground">{label}</p>
+            <p className="text-sm font-medium">{value}</p>
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   if (!greenhouseConfig) return null;
 

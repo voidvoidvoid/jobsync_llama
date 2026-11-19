@@ -99,6 +99,53 @@ describe("describeNotification", () => {
     });
   });
 
+  it("AI Matching run: counts jobs scored, not saved, and links to My Jobs", () => {
+    const d = describeNotification(
+      item({
+        payload: {
+          status: "completed",
+          jobsSearched: 40,
+          jobsSaved: 0,
+          belowThreshold: 12,
+          boardsFailed: 0,
+          aiError: null,
+          aiMatch: { scored: 15, strong: 3, failed: 1, left: 25 },
+        },
+      }),
+    );
+    expect(d.lead).toBe("15 jobs scored");
+    expect(d.detail).toBe(" · 3 strong matches · 1 could not be scored · 25 still unmatched");
+    expect(d.link).toEqual({ label: "See your jobs", href: "/dashboard/myjobs" });
+  });
+
+  it("AI Matching run with nothing left to score", () => {
+    const d = describeNotification(
+      item({
+        payload: {
+          status: "completed",
+          jobsSearched: 0,
+          jobsSaved: 0,
+          belowThreshold: 0,
+          boardsFailed: 0,
+          aiError: null,
+          aiMatch: { scored: 0, strong: 0, failed: 0, left: 0 },
+        },
+      }),
+    );
+    expect(d.lead).toBe("Nothing to score");
+    expect(d.link).toBeNull();
+  });
+
+  it("failed AI Matching run says how many jobs it scored", () => {
+    const d = describeNotification(
+      item({
+        kind: "error",
+        payload: { reason: "AI provider (llamacpp) is not available.", jobsSaved: 0, boards: [], jobsScored: 4 },
+      }),
+    );
+    expect(d.lead).toBe("4 jobs scored");
+  });
+
   it("board row for a missing or rejected API key points at the key", () => {
     const d = describeNotification(
       item({

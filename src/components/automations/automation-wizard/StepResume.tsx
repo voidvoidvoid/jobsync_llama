@@ -26,9 +26,11 @@ import { IncompleteResumeHint } from "@/components/IncompleteResumeHint";
 export function StepResume({
   form,
   resumes,
+  aiMatch = false,
 }: {
   form: UseFormReturn<CreateAutomationInput>;
   resumes: WizardResume[];
+  aiMatch?: boolean;
 }) {
   const selectableCount = resumes.filter((r) =>
     hasMinResumeSections(r.sectionCount),
@@ -66,7 +68,9 @@ export function StepResume({
               </SelectContent>
             </Select>
             <FormDescription>
-              Jobs will be matched against this resume
+              {aiMatch
+                ? "Used for jobs with no resume of their own, or for every job if you chose that in the previous step"
+                : "Jobs will be matched against this resume"}
             </FormDescription>
             <FormMessage />
           </FormItem>

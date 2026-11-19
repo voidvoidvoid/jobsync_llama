@@ -45,6 +45,7 @@ export async function recordRunNotifications(
       runId,
     };
     const boards = data.boardErrors ?? [];
+    const isAiMatch = run.automation.jobBoard === "ai-match";
 
     if (data.status === "completed" || data.status === "completed_with_errors") {
       // Only an AI outage earns a red row; board failures get their own rows.
@@ -56,6 +57,16 @@ export async function recordRunNotifications(
         belowThreshold: Math.max(0, data.jobsProcessed - data.jobsMatched),
         boardsFailed: boards.length,
         aiError,
+        ...(isAiMatch
+          ? {
+              aiMatch: {
+                scored: data.jobsProcessed,
+                strong: data.jobsMatched,
+                failed: data.aiMatchFailed ?? 0,
+                left: Math.max(0, data.jobsSearched - data.jobsProcessed),
+              },
+            }
+          : {}),
       };
       await db.notification.create({
         data: { ...base, kind: "run", payload: JSON.stringify(payload) },
@@ -88,6 +99,7 @@ export async function recordRunNotifications(
       ),
       jobsSaved: data.jobsSaved,
       boards: boards.map(toBoardPayload),
+      ...(isAiMatch ? { jobsScored: data.jobsProcessed } : {}),
     };
     await db.notification.create({
       data: { ...base, kind: "error", payload: JSON.stringify(err) },

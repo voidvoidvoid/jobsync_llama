@@ -5,6 +5,7 @@ import { requireUser } from "../shared";
 import type { AutomationWithResume, AutomationRun } from "@/models/automation.model";
 import { APP_CONSTANTS } from "@/lib/constants";
 import { formatError } from "./shared";
+import { unmatchedJobsWhere } from "@/lib/jobs/unmatched";
 
 export async function getAutomationsList(
   page: number = 1,
@@ -78,5 +79,35 @@ export async function getAutomationById(id: string): Promise<{
     };
   } catch (error) {
     return formatError(error, "Failed to get automation");
+  }
+}
+
+// How many saved jobs an AI Matching automation with these settings would
+// find right now (the wizard shows it beside the settings).
+export async function countUnmatchedJobs(scope: {
+  includeDiscovered: boolean;
+  includeTracked: boolean;
+}): Promise<{ success: boolean; count?: number; message?: string }> {
+  try {
+    const user = await requireUser();
+    if (!scope.includeDiscovered && !scope.includeTracked) {
+      return { success: true, count: 0 };
+    }
+    const count = await db.job.count({
+      // The owner is stated directly, beside the shared filter (which also
+      // carries it), so no spread can stand in for it
+      where: {
+        userId: user.id,
+        AND: [
+          unmatchedJobsWhere(user.id, {
+            includeDiscovered: scope.includeDiscovered === true,
+            includeTracked: scope.includeTracked === true,
+          }),
+        ],
+      },
+    });
+    return { success: true, count };
+  } catch (error) {
+    return formatError(error, "Failed to count unmatched jobs");
   }
 }

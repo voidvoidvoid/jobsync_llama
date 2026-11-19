@@ -63,12 +63,17 @@ export function StepBasics({
                 <SelectItem value="remote">
                   Remote job boards (keyword search)
                 </SelectItem>
+                <SelectItem value="ai-match">
+                  AI Matching (score saved jobs)
+                </SelectItem>
               </SelectContent>
             </Select>
             <FormDescription>
               {field.value === "remote"
                 ? "Search remote job boards by title and keyword, with no company list"
-                : "Track specific companies' job boards"}
+                : field.value === "ai-match"
+                  ? "Give AI match scores to jobs you have saved that have none yet"
+                  : "Track specific companies' job boards"}
             </FormDescription>
             <FormMessage />
           </FormItem>

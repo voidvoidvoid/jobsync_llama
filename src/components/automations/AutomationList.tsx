@@ -37,7 +37,12 @@ import {
   Loader2,
 } from "lucide-react";
 import type { AutomationWithResume } from "@/models/automation.model";
-import { isRetiredBoard, jobBoardLabel } from "@/models/automation.model";
+import {
+  aiMatchConfig,
+  isAiMatchBoard,
+  isRetiredBoard,
+  jobBoardLabel,
+} from "@/models/automation.model";
 import {
   deleteAutomation,
   pauseAutomation,
@@ -144,6 +149,9 @@ export function AutomationList({
           const atsKeywords: string[] = ats?.keywords ?? [];
           const atsTopK: number = ats?.topK ?? APP_CONSTANTS.MAX_JOBS_PER_RUN;
           const atsSaveUnanalyzed: boolean = ats?.saveUnanalyzed !== false;
+          const aiMatch = isAiMatchBoard(automation.jobBoard)
+            ? aiMatchConfig(ats)
+            : null;
 
           return (
             <div
@@ -191,7 +199,40 @@ export function AutomationList({
                   </div>
                 )}
 
-                {!retired && (
+                {!retired && aiMatch && (
+                  <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-muted-foreground">
+                    <span>
+                      <span className="font-medium text-foreground">
+                        Scores:
+                      </span>{" "}
+                      {[
+                        aiMatch.includeDiscovered && "search listings",
+                        aiMatch.includeTracked && "My Jobs",
+                      ]
+                        .filter(Boolean)
+                        .join(" and ")}
+                    </span>
+                    <span>
+                      <span className="font-medium text-foreground">
+                        Per run:
+                      </span>{" "}
+                      up to {aiMatch.maxJobs},{" "}
+                      {aiMatch.newestFirst ? "newest first" : "oldest first"}
+                    </span>
+                    {automation.resume && (
+                      <span>
+                        <span className="font-medium text-foreground">
+                          Resume:
+                        </span>{" "}
+                        {aiMatch.resumeSource === "job"
+                          ? `each job's own, else ${automation.resume.title}`
+                          : automation.resume.title}
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {!retired && !aiMatch && (
                   <div className="space-y-1.5 text-sm text-muted-foreground">
                     <div className="flex flex-wrap items-center gap-1">
                       {atsCompanies.slice(0, 3).map((c) => (
@@ -260,7 +301,10 @@ export function AutomationList({
                   </div>
                   <div className="flex items-center gap-1">
                     <FileText className="h-4 w-4" />
-                    <span>{automation.matchThreshold}% threshold</span>
+                    <span>
+                      {automation.matchThreshold}%{" "}
+                      {aiMatch ? "strong match" : "threshold"}
+                    </span>
                   </div>
                   {!retired &&
                     automation.nextRunAt &&
@@ -298,7 +342,9 @@ export function AutomationList({
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => runNow(automation.id, automation.name)}
+                      onClick={() =>
+                        runNow(automation.id, automation.name, !!aiMatch)
+                      }
                       disabled={
                         isStarting(automation.id) ||
                         resumeMissing ||

@@ -107,6 +107,74 @@ describe("useWizardForm subscriptions", () => {
     );
   });
 
+  it("gives an AI Matching automation its default settings, with no company step", async () => {
+    const { result } = renderHook(() => useWizardForm(props));
+    act(() => result.current.form.setValue("name", "Score backlog"));
+    act(() => result.current.nextStep());
+
+    act(() => result.current.form.setValue("jobBoard", "ai-match"));
+
+    expect(result.current.atsKey).toBe("ai-match");
+    expect(result.current.canGoNext()).toBe(true);
+    await waitFor(() =>
+      expect(result.current.formValues.sourceConfig?.["ai-match"]).toEqual({
+        maxJobs: 20,
+        newestFirst: true,
+        includeDiscovered: true,
+        includeTracked: true,
+        resumeSource: "job",
+      }),
+    );
+  });
+
+  it("will not move past AI Matching settings with nothing to score", () => {
+    const { result } = renderHook(() => useWizardForm(props));
+    act(() => result.current.form.setValue("name", "Score backlog"));
+    act(() => result.current.nextStep());
+    act(() => {
+      result.current.form.setValue("jobBoard", "ai-match");
+      result.current.form.setValue("sourceConfig", {
+        "ai-match": {
+          maxJobs: 20,
+          newestFirst: true,
+          includeDiscovered: false,
+          includeTracked: false,
+          resumeSource: "job",
+        },
+      });
+    });
+
+    expect(result.current.canGoNext()).toBe(false);
+  });
+
+  it("reloads an AI Matching automation's settings when editing it", () => {
+    const editing = {
+      ...automation,
+      jobBoard: "ai-match",
+      sourceConfig: JSON.stringify({
+        "ai-match": {
+          maxJobs: 75,
+          newestFirst: false,
+          includeDiscovered: false,
+          includeTracked: true,
+          resumeSource: "automation",
+        },
+      }),
+    } as AutomationWithResume;
+
+    const { result } = renderHook(() =>
+      useWizardForm({ ...props, editAutomation: editing }),
+    );
+
+    expect(result.current.matchConfig).toEqual({
+      maxJobs: 75,
+      newestFirst: false,
+      includeDiscovered: false,
+      includeTracked: true,
+      resumeSource: "automation",
+    });
+  });
+
   it("reflects edit resets and defaults when the permanently mounted wizard reopens", () => {
     const { result, rerender } = renderHook((p) => useWizardForm(p), { initialProps: props });
     rerender({ ...props, editAutomation: automation });
