@@ -166,6 +166,49 @@ export const PROVIDER_REGISTRY: Record<string, ProviderRegistryEntry> = {
   },
 };
 
+// Keys for job sources rather than AI providers. Listed on the API Keys page
+// after the AI providers, never offered as an AI provider. JSearch is sold
+// both directly and on RapidAPI, with different keys and hosts; either works,
+// and a direct key is used when both are saved.
+export const JOB_SOURCE_CREDENTIALS: ProviderRegistryEntry[] = [
+  {
+    id: "jsearch",
+    displayName: "JSearch (OpenWeb Ninja)",
+    credentialType: "api-key",
+    category: "cloud",
+    envVar: "JSEARCH_API_KEY",
+    requiresRunningCheck: false,
+    supportsKeepAlive: false,
+    keyConfig: {
+      placeholder: "Your OpenWeb Ninja API key",
+      inputType: "password",
+      description:
+        "Job search across LinkedIn, Indeed, Glassdoor and more, for remote job board automations. Free and paid plans use the same key. Checking a key uses one request from its plan",
+      sensitive: true,
+    },
+  },
+  {
+    id: "jsearch-rapidapi",
+    displayName: "JSearch (RapidAPI)",
+    credentialType: "api-key",
+    category: "cloud",
+    envVar: "JSEARCH_RAPIDAPI_KEY",
+    requiresRunningCheck: false,
+    supportsKeepAlive: false,
+    keyConfig: {
+      placeholder: "Your RapidAPI key",
+      inputType: "password",
+      description:
+        "Only if you subscribed to JSearch through RapidAPI instead. Used when no OpenWeb Ninja key is saved. Checking a key uses one request from its plan",
+      sensitive: true,
+    },
+  },
+];
+
+for (const entry of JOB_SOURCE_CREDENTIALS) {
+  PROVIDER_REGISTRY[entry.id] = entry;
+}
+
 export const AI_PROVIDERS = ["ollama", "llamacpp", "openai", "deepseek", "openrouter", "gemini"] as const;
 export type AiProviderId = (typeof AI_PROVIDERS)[number];
 
@@ -174,13 +217,16 @@ export function getAiProviders(): ProviderRegistryEntry[] {
 }
 
 // Everything the API Keys page stores: each AI provider, followed by its
-// optional companion credential when it has one.
+// optional companion credential when it has one, then the job-source keys.
 export function getCredentialProviders(): ProviderRegistryEntry[] {
-  return getAiProviders().flatMap((entry) =>
-    entry.apiKeyProvider
-      ? [entry, PROVIDER_REGISTRY[entry.apiKeyProvider]]
-      : [entry],
-  );
+  return [
+    ...getAiProviders().flatMap((entry) =>
+      entry.apiKeyProvider
+        ? [entry, PROVIDER_REGISTRY[entry.apiKeyProvider]]
+        : [entry],
+    ),
+    ...JOB_SOURCE_CREDENTIALS,
+  ];
 }
 
 // Accepts http://host:8080, http://host:8080/ and http://host:8080/v1 alike

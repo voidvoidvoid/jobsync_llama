@@ -157,6 +157,10 @@ export const APP_CONSTANTS = {
   WORKINGNOMADS_API_URL: "https://www.workingnomads.com/api/exposed_jobs/",
   ARBEITNOW_API_URL: "https://www.arbeitnow.com/api/job-board-api",
   ARBEITNOW_MAX_PAGES: 2, // 100 remote jobs a page, newest first
+  // JSearch: a direct OpenWeb Ninja key, or the same API bought on RapidAPI.
+  JSEARCH_DIRECT_URL: "https://api.openwebninja.com/jsearch/search-v2",
+  JSEARCH_RAPIDAPI_HOST: "jsearch.p.rapidapi.com",
+  JSEARCH_RAPIDAPI_URL: "https://jsearch.p.rapidapi.com/search",
   REMOTE_FEED_MAX_TERMS: 6, // search terms sent to a feed per run
   REMOTE_FEED_REQUEST_DELAY_MS: 400, // pause between requests to one feed
   REMOTE_FEED_TIMEOUT_MS: 25_000, // per request

@@ -73,11 +73,19 @@ export const RemoteFeedSchema = z.object({
     "weworkremotely",
     "workingnomads",
     "arbeitnow",
+    "jsearch",
   ]),
 });
 
+export const JSearchOptionsSchema = z.object({
+  remoteOnly: z.boolean().optional(),
+  pagesPerTerm: z.number().int().min(1).max(10).optional(),
+  datePosted: z.enum(["today", "3days", "week", "month", "all"]).optional(),
+});
+
 export const RemoteSourceConfigSchema = GreenhouseSourceConfigSchema.extend({
-  companies: z.array(RemoteFeedSchema).max(6),
+  companies: z.array(RemoteFeedSchema).max(7),
+  jsearch: JSearchOptionsSchema.optional(),
 });
 
 export const SourceConfigSchema = z.object({

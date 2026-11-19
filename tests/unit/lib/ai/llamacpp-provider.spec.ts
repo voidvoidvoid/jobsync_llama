@@ -209,3 +209,52 @@ describe("PROVIDER_VERIFIERS – llamacpp-key", () => {
     expect(result).toEqual({ success: false, error: "Invalid API key" });
   });
 });
+
+describe("PROVIDER_VERIFIERS – JSearch", () => {
+  const originalFetch = global.fetch;
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  it("checks a direct key with one search on OpenWeb Ninja", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({ ok: true, status: 200, json: async () => ({ data: [] }) });
+    global.fetch = fetchMock;
+
+    const result = await PROVIDER_VERIFIERS.jsearch("k1");
+
+    expect(result).toEqual({ success: true });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(String(fetchMock.mock.calls[0][0])).toContain("api.openwebninja.com");
+    expect(fetchMock.mock.calls[0][1].headers["x-api-key"]).toBe("k1");
+  });
+
+  it("checks a RapidAPI key on RapidAPI", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({ ok: true, status: 200, json: async () => ({ data: [] }) });
+    global.fetch = fetchMock;
+
+    await PROVIDER_VERIFIERS["jsearch-rapidapi"]("k2");
+
+    expect(String(fetchMock.mock.calls[0][0])).toContain("jsearch.p.rapidapi.com");
+    expect(fetchMock.mock.calls[0][1].headers["X-RapidAPI-Key"]).toBe("k2");
+  });
+
+  it("rejects a key the API refuses", async () => {
+    global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 401 });
+
+    const result = await PROVIDER_VERIFIERS.jsearch("bad");
+
+    expect(result.success).toBe(false);
+    expect(result.error).toMatch(/Invalid API key/);
+  });
+
+  // The free plan's monthly allowance is a hard stop; the key is still real
+  it("accepts a key whose allowance is used up", async () => {
+    global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 429 });
+
+    expect(await PROVIDER_VERIFIERS.jsearch("k1")).toEqual({ success: true });
+  });
+});

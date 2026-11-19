@@ -1,3 +1,4 @@
+import type { JSearchOptions } from "@/models/automation.model";
 import type { JobBoard } from "@/models/automation.model";
 import type { JobDetails } from "../types";
 
@@ -10,6 +11,10 @@ export type AtsHost = "default" | "eu";
 export interface AtsSearchQuery {
   targetTitles: string[];
   keywords: string[];
+  // The automation's owner: sources behind the user's own API key look it up
+  userId?: string;
+  // Settings for the JSearch source of the remote board
+  jsearch?: JSearchOptions;
 }
 
 export interface AtsProvider {

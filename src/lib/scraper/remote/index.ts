@@ -8,13 +8,17 @@ import { fetchRemoteOkJobs } from "./remoteok";
 import { fetchWwrJobs } from "./weworkremotely";
 import { fetchWorkingNomadsJobs } from "./workingnomads";
 import { fetchArbeitnowJobs } from "./arbeitnow";
+import { fetchJSearchJobs } from "./jsearch";
 
 export { remoteLocationMatches } from "./location";
 export { buildSearchTerms } from "./terms";
 
 const FEEDS: Record<
   string,
-  (terms: string[]) => Promise<ScraperResult<JobDetails[]>>
+  (
+    terms: string[],
+    query?: AtsSearchQuery,
+  ) => Promise<ScraperResult<JobDetails[]>>
 > = {
   himalayas: fetchHimalayasJobs,
   jobicy: fetchJobicyJobs,
@@ -22,6 +26,8 @@ const FEEDS: Record<
   weworkremotely: fetchWwrJobs,
   workingnomads: fetchWorkingNomadsJobs,
   arbeitnow: fetchArbeitnowJobs,
+  jsearch: (terms, query) =>
+    fetchJSearchJobs(terms, query?.userId, query?.jsearch),
 };
 
 // The "remote" board's search. `feeds` arrives in the slot company boards use
@@ -42,7 +48,7 @@ export async function searchRemoteFeeds(
           error: { type: "parse", message: "is not a known job board" },
         });
       }
-      return fetchFeed(terms);
+      return fetchFeed(terms, query);
     }),
   );
 

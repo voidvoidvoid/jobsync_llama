@@ -212,7 +212,13 @@ describe("runAutomation (lever)", () => {
           { name: "Himalayas", token: "himalayas" },
           { name: "Jobicy", token: "jobicy" },
         ],
-        { targetTitles: ["Frontend Engineer"], keywords: ["React"] },
+        {
+          targetTitles: ["Frontend Engineer"],
+          keywords: ["React"],
+          // the owner, for sources behind their own API key
+          userId: remoteAutomation.userId,
+          jsearch: undefined,
+        },
       ]);
       expect(result.jobsSaved).toBe(1);
       expect((prisma.job.create as any).mock.calls[0][0].data.workplaceType).toBe(
@@ -251,6 +257,22 @@ describe("runAutomation (lever)", () => {
       const result = await runAutomation(remoteAutomation);
 
       expect(result.jobsSaved).toBe(1);
+    });
+
+    it("hands the automation's JSearch settings to the search", async () => {
+      (searchRemoteFeeds as any).mockResolvedValue({ jobs: [], errors: [] });
+      const config = JSON.parse(remoteAutomation.sourceConfig as string);
+      config.remote.jsearch = { remoteOnly: false, pagesPerTerm: 3 };
+
+      await runAutomation({
+        ...remoteAutomation,
+        sourceConfig: JSON.stringify(config),
+      });
+
+      expect((searchRemoteFeeds as any).mock.calls[0][1].jsearch).toEqual({
+        remoteOnly: false,
+        pagesPerTerm: 3,
+      });
     });
 
     it("saves a long country list as one short location", async () => {

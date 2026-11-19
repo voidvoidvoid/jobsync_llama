@@ -194,7 +194,20 @@ describe("getCredentialProviders", () => {
   it("lists the llama.cpp key right after its base URL", () => {
     const ids = getCredentialProviders().map((e) => e.id);
     expect(ids.indexOf("llamacpp-key")).toBe(ids.indexOf("llamacpp") + 1);
-    expect(ids).toHaveLength(AI_PROVIDERS.length + 1);
+  });
+
+  it("lists the JSearch keys last, after every AI provider", () => {
+    const ids = getCredentialProviders().map((e) => e.id);
+    expect(ids.slice(-2)).toEqual(["jsearch", "jsearch-rapidapi"]);
+    expect(ids).toHaveLength(AI_PROVIDERS.length + 3);
+  });
+
+  it("never offers a JSearch key as an AI provider", () => {
+    expect(AI_PROVIDERS).not.toContain("jsearch" as never);
+    expect(PROVIDER_REGISTRY.jsearch.envVar).toBe("JSEARCH_API_KEY");
+    expect(PROVIDER_REGISTRY["jsearch-rapidapi"].envVar).toBe(
+      "JSEARCH_RAPIDAPI_KEY",
+    );
   });
 });
 

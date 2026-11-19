@@ -8,6 +8,35 @@ import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { APP_CONSTANTS } from "@/lib/constants";
 import { normalizeOpenAICompatibleBaseUrl } from "@/lib/ai/provider-registry";
 import { resolveApiKey } from "@/lib/api-key-resolver";
+import { jsearchRequest, type JSearchKey } from "@/lib/scraper/remote/jsearch";
+
+// One real search (one request from the key's plan): JSearch has no free
+// "who am I" call. A spent monthly allowance still proves the key is real.
+async function verifyJSearchKey(
+  credential: JSearchKey,
+): Promise<{ success: boolean; error?: string }> {
+  const result = await jsearchRequest(credential, {
+    query: "software engineer",
+    pages: 1,
+    remoteOnly: true,
+    datePosted: "week",
+  });
+  if (result.success) return { success: true };
+  if (result.error.type === "rate_limited") return { success: true };
+  if (result.error.type === "blocked") {
+    return { success: false, error: "Invalid API key, or no active JSearch subscription for it" };
+  }
+  if (result.error.type === "network" && /fetch failed|ENOTFOUND|ECONNREFUSED|EAI_AGAIN/.test(result.error.message)) {
+    // Let the route report it as "unreachable" rather than a bad key
+    throw new TypeError(result.error.message);
+  }
+  return {
+    success: false,
+    error: result.error.type === "parse" || result.error.type === "network"
+      ? result.error.message
+      : "Could not verify the key",
+  };
+}
 
 export interface VerifyContext {
   userId?: string;
@@ -87,6 +116,9 @@ export const PROVIDER_VERIFIERS: Record<
       };
     }
   },
+
+  jsearch: (key) => verifyJSearchKey({ key, via: "direct" }),
+  "jsearch-rapidapi": (key) => verifyJSearchKey({ key, via: "rapidapi" }),
 
   // Checked against the saved base URL. Servers that leave /models open
   // (llama-server does) accept any key here; a wrong one then fails on use.

@@ -5,6 +5,8 @@ import { ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
+  jsearchOptions,
+  type JSearchOptions,
   isRemoteBoard,
   type JobBoard,
   type LeverSourceConfig,
@@ -18,7 +20,7 @@ import { APP_CONSTANTS } from "@/lib/constants";
 function parseAtsConfig(
   sourceConfig: string | null | undefined,
   jobBoard: JobBoard,
-): Partial<LeverSourceConfig> | null {
+): (Partial<LeverSourceConfig> & { jsearch?: JSearchOptions }) | null {
   if (!sourceConfig) return null;
   try {
     return JSON.parse(sourceConfig)?.[jobBoard] ?? null;
@@ -128,6 +130,24 @@ export function AutomationSearchConfig({
               {greenhouseConfig.topK ?? APP_CONSTANTS.MAX_JOBS_PER_RUN}
             </p>
           </div>
+          {greenhouseConfig.companies?.some((c) => c.token === "jsearch") && (
+            <div className="col-span-2">
+              <p className="text-sm text-muted-foreground">JSearch</p>
+              <p className="text-sm font-medium">
+                {(() => {
+                  const o = jsearchOptions(greenhouseConfig.jsearch);
+                  const posted: Record<string, string> = {
+                    today: "today",
+                    "3days": "last 3 days",
+                    week: "last week",
+                    month: "last month",
+                    all: "any time",
+                  };
+                  return `${o.remoteOnly ? "Remote only" : "All work types"} · up to ${o.pagesPerTerm * 10} per term · posted ${posted[o.datePosted]}`;
+                })()}
+              </p>
+            </div>
+          )}
           <div>
             <p className="text-sm text-muted-foreground">Extra listings</p>
             <p className="text-sm font-medium">

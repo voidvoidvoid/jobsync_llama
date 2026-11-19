@@ -9,6 +9,8 @@ export const apiKeySaveSchema = z.object({
     "gemini",
     "llamacpp",
     "llamacpp-key",
+    "jsearch",
+    "jsearch-rapidapi",
   ]),
   key: z.string().min(1, "API key is required"),
   label: z.string().optional(),

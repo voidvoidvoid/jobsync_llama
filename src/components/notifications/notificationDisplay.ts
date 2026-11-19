@@ -15,6 +15,7 @@ const BOARD_COPY: Record<BoardErrorCode, string> = {
   http_error: "returned an error.",
   parse: "returned data that could not be read.",
   network: "could not be reached.",
+  auth: "needs a valid API key (Settings → API Keys).",
 };
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;

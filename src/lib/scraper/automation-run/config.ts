@@ -1,5 +1,5 @@
 import { APP_CONSTANTS } from "@/lib/constants";
-import type { JobBoard } from "@/models/automation.model";
+import type { JobBoard, JSearchOptions } from "@/models/automation.model";
 
 export interface AtsRunConfig {
   companies: { name: string; token: string; host?: "default" | "eu" }[];
@@ -9,6 +9,8 @@ export interface AtsRunConfig {
   strictLocation: boolean;
   topK: number;
   saveUnanalyzed: boolean;
+  // Remote board only: settings for its JSearch source
+  jsearch?: JSearchOptions;
 }
 
 export function parseAtsConfig(
@@ -31,6 +33,9 @@ export function parseAtsConfig(
           ? cfg.topK
           : APP_CONSTANTS.MAX_JOBS_PER_RUN,
       saveUnanalyzed: cfg.saveUnanalyzed !== false,
+      ...(cfg.jsearch && typeof cfg.jsearch === "object"
+        ? { jsearch: cfg.jsearch as JSearchOptions }
+        : {}),
     };
   } catch {
     return null;

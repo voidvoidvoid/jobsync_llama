@@ -150,6 +150,35 @@ describe("CreateAutomationSchema conditional validation", () => {
     expect(result.success).toBe(true);
   });
 
+  it("remote accepts JSearch with its settings", () => {
+    const result = CreateAutomationSchema.safeParse({
+      ...base,
+      jobBoard: "remote",
+      sourceConfig: {
+        remote: {
+          companies: [{ name: "JSearch", token: "jsearch" }],
+          keywords: ["Kubernetes"],
+          jsearch: { remoteOnly: true, pagesPerTerm: 5, datePosted: "3days" },
+        },
+      },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("remote caps JSearch at ten pages a term", () => {
+    const result = CreateAutomationSchema.safeParse({
+      ...base,
+      jobBoard: "remote",
+      sourceConfig: {
+        remote: {
+          companies: [{ name: "JSearch", token: "jsearch" }],
+          jsearch: { pagesPerTerm: 50 },
+        },
+      },
+    });
+    expect(result.success).toBe(false);
+  });
+
   it("remote rejects a feed it does not know", () => {
     const result = CreateAutomationSchema.safeParse({
       ...base,

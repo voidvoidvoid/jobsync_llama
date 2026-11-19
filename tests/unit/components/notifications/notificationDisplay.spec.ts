@@ -99,6 +99,16 @@ describe("describeNotification", () => {
     });
   });
 
+  it("board row for a missing or rejected API key points at the key", () => {
+    const d = describeNotification(
+      item({
+        kind: "board",
+        payload: { provider: "Remote boards", token: "jsearch", companyName: "JSearch", code: "auth", reason: "JSearch has no API key. Add one in Settings → API Keys" },
+      }),
+    );
+    expect(d.detail).toBe(" needs a valid API key (Settings → API Keys).");
+  });
+
   it("board row: http_error names the status instead of the generic copy", () => {
     const d = describeNotification(
       item({

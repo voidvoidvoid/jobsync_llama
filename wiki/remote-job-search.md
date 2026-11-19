@@ -3,8 +3,8 @@ type: how-to
 title: Remote Job Search
 description: Setting up an automation that searches remote job boards by job title and keyword with no company list, and limiting it to roles open to where you live.
 feature: automations
-tags: [automations, remote, remote jobs, keyword search, himalayas, jobicy, remote ok, we work remotely, working nomads, arbeitnow, job boards, work from anywhere, locations, countries, skills, job search]
-aliases: [remote job boards, search without companies, open job search, keyword job search, remote automation]
+tags: [automations, remote, remote jobs, keyword search, himalayas, jobicy, remote ok, we work remotely, working nomads, arbeitnow, jsearch, linkedin, indeed, glassdoor, api key, job boards, work from anywhere, locations, countries, skills, job search]
+aliases: [remote job boards, search without companies, open job search, keyword job search, remote automation, linkedin jobs, jsearch]
 status: stable
 stale_after: 2027-09-30
 ---
@@ -23,7 +23,9 @@ The other four have no search of their own, so JobSync downloads their current l
 - **Remote OK** — its newest 100 postings.
 - **We Work Remotely** — the newest postings from its public feed.
 - **Working Nomads** — its whole current list.
-- **Arbeitnow** — its newest remote postings. It is a European board, largely German employers, and many listings are written in German, so it is the one board that starts switched off.
+- **Arbeitnow** — its newest remote postings. It is a European board, largely German employers, and many listings are written in German, so it starts switched off.
+
+A seventh board, **JSearch**, also starts switched off because it needs your own API key. See [How do I get LinkedIn and Indeed jobs?](#how-do-i-get-linkedin-and-indeed-jobs)
 
 Every listing on these boards is a remote role from whichever employer posted it, so there is no company list to build and no remote filter to set. The rest of the wizard — resume, match threshold, schedule — works exactly as it does for a company-board automation, and so do ranking, AI scoring and the discovered-jobs list.
 
@@ -44,6 +46,27 @@ A remote role often still requires you to live in certain countries, and that is
 `US`, `USA` and `United States` are treated as the same place, as are `UK` and `United Kingdom`. Anything else must be spelled the way a posting would spell it, and a country does not match a region that contains it: `Germany` will not match a role listed as `Europe`, so add both if you want both.
 
 Leave the toggle off to see every remote role regardless of where it is open.
+
+## How do I get LinkedIn and Indeed jobs?
+
+LinkedIn has no public job-search API, so JobSync reaches its listings through **JSearch**, a paid service with a free plan. JSearch searches Google for Jobs, which collects postings from LinkedIn, Indeed, Glassdoor, ZipRecruiter and company career pages. Each job it finds is saved with the site it came from as its source — `LinkedIn`, `Indeed` — and links to the posting there.
+
+1. Get a key. Sign up at OpenWeb Ninja (the company behind JSearch) for its free plan, or subscribe to JSearch on RapidAPI if you already use RapidAPI.
+2. In **Settings → API Keys**, paste it into **JSearch (OpenWeb Ninja)** or **JSearch (RapidAPI)**, whichever matches where you got it. Saving checks the key with one real search, which uses one request from your plan. If both are saved, the OpenWeb Ninja key is used. A self-hosted server can set `JSEARCH_API_KEY` or `JSEARCH_RAPIDAPI_KEY` instead.
+3. In a remote automation, switch on **JSearch**. Its settings appear underneath:
+   - **Remote roles only** — on by default. JSearch covers every kind of job, so turn this off only if you also want on-site and hybrid roles; those are saved with their city as the location.
+   - **Results per search term** — up to 10 by default. Each 10 results costs one request.
+   - **Posted within** — the last week by default, which suits a daily run.
+
+JSearch needs at least one job title or keyword: it only runs searches.
+
+## How many JSearch requests will I use?
+
+Each run uses one request per search term for every 10 results asked for. Search terms are your first six titles and keywords, so three terms at 10 results each is 3 requests a run, about 90 a month on the daily schedule. The Search step shows this figure as you change the settings, and turns amber when it goes past the free plan's 200 requests a month. Running an automation by hand counts too, as does saving or re-checking a key.
+
+When the plan's allowance is used up, JSearch refuses further searches until the next month. The run carries on with your other boards and a notification says JSearch was rate limited.
+
+To get more, move to a paid plan — the same key keeps working, so nothing changes in JobSync — then raise **Results per search term**. At the time of writing, OpenWeb Ninja's paid plans start at 10,000 requests a month. A notification saying JSearch **needs a valid API key** means no key is saved or the saved one was refused, for example after a subscription lapsed.
 
 ## Why does Arbeitnow show a city for a remote job?
 

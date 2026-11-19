@@ -1,9 +1,11 @@
+import type { JSearchOptions } from "@/models/automation.model";
 import type { LeverSourceConfig } from "@/models/automation.model";
 
 // The step is provider-agnostic; it edits the canonical Lever config shape — a
 // superset of Greenhouse's, where the extra per-company `host` is unused and
 // UI-invisible for Greenhouse.
-export type AtsConfigValue = LeverSourceConfig;
+// The remote board also carries its JSearch settings
+export type AtsConfigValue = LeverSourceConfig & { jsearch?: JSearchOptions };
 
 export type EntityOption = { id: string; label: string; value: string };
 

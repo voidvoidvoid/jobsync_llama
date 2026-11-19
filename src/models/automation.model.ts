@@ -72,11 +72,48 @@ export type RemoteFeedId =
   | "remoteok"
   | "weworkremotely"
   | "workingnomads"
-  | "arbeitnow";
+  | "arbeitnow"
+  | "jsearch";
+
+export type JSearchDatePosted = "today" | "3days" | "week" | "month" | "all";
+
+// Per-automation JSearch settings. Every field is optional: an absent value
+// means the default below, so saved automations never need migrating.
+export interface JSearchOptions {
+  remoteOnly?: boolean; // default true
+  // 10 results a page; each page costs one request from the plan
+  pagesPerTerm?: number; // default 1
+  datePosted?: JSearchDatePosted; // default "week"
+}
+
+export const JSEARCH_DEFAULTS: Required<JSearchOptions> = {
+  remoteOnly: true,
+  pagesPerTerm: 1,
+  datePosted: "week",
+};
+
+export const JSEARCH_MAX_PAGES_PER_TERM = 10;
+export const JSEARCH_FREE_MONTHLY_REQUESTS = 200;
+
+export function jsearchOptions(options?: JSearchOptions): Required<JSearchOptions> {
+  const pages = Math.trunc(Number(options?.pagesPerTerm));
+  return {
+    remoteOnly:
+      typeof options?.remoteOnly === "boolean"
+        ? options.remoteOnly
+        : JSEARCH_DEFAULTS.remoteOnly,
+    pagesPerTerm:
+      pages >= 1
+        ? Math.min(pages, JSEARCH_MAX_PAGES_PER_TERM)
+        : JSEARCH_DEFAULTS.pagesPerTerm,
+    datePosted: options?.datePosted ?? JSEARCH_DEFAULTS.datePosted,
+  };
+}
 
 export interface RemoteSourceConfig
   extends Omit<GreenhouseSourceConfig, "companies"> {
   companies: RemoteFeed[];
+  jsearch?: JSearchOptions;
 }
 
 // `url` is the feed's public site: the link shown beside its name, which also
@@ -88,6 +125,8 @@ export const REMOTE_FEEDS: {
   url: string;
   blurb: string;
   defaultOn: boolean;
+  // Needs the user's own API key (Settings → API Keys)
+  requiresKey?: boolean;
 }[] = [
   {
     token: "himalayas",
@@ -131,6 +170,15 @@ export const REMOTE_FEEDS: {
     blurb:
       "Europe-focused, largely Germany, and many listings are in German. Its newest remote roles, filtered here.",
     defaultOn: false,
+  },
+  {
+    token: "jsearch",
+    name: "JSearch",
+    url: "https://www.openwebninja.com/api/jsearch",
+    blurb:
+      "LinkedIn, Indeed, Glassdoor and more, through Google for Jobs. Searched with your titles and keywords. Needs a JSearch API key (free plan available).",
+    defaultOn: false,
+    requiresKey: true,
   },
 ];
 

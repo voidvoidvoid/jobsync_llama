@@ -49,10 +49,7 @@ export function AtsSearchStep({ provider, value, onChange }: AtsSearchStepProps)
   if (provider === "remote") {
     return (
       <div className="space-y-5">
-        <RemoteFeedPicker
-          feeds={companies}
-          onChange={(feeds) => onChange({ ...value, companies: feeds })}
-        />
+        <RemoteFeedPicker value={value} onChange={onChange} />
         <TargetingFields value={value} onChange={onChange} remote />
         <RunOptionsFields value={value} onChange={onChange} />
       </div>

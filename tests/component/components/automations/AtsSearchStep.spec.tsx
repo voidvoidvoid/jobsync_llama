@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AtsSearchStep } from "@/components/automations/AtsSearchStep";
 import { toastInfo } from "@/lib/toast";
@@ -37,6 +37,11 @@ vi.mock("@/actions/jobLocation.actions", () => ({
 
 vi.mock("@/actions/job.actions", () => ({
   createLocation: vi.fn(),
+}));
+
+const getUserApiKeys = vi.fn().mockResolvedValue({ success: true, data: [] });
+vi.mock("@/actions/apiKey.actions", () => ({
+  getUserApiKeys: () => getUserApiKeys(),
 }));
 
 vi.mock("@/lib/toast", () => ({
@@ -162,7 +167,7 @@ describe("AtsSearchStep on the remote board", () => {
       expect(screen.getByRole("switch", { name })).toBeChecked();
     }
     // Boards that are offered but not in this automation show as off
-    for (const name of ["We Work Remotely", "Working Nomads", "Arbeitnow"]) {
+    for (const name of ["We Work Remotely", "Working Nomads", "Arbeitnow", "JSearch"]) {
       expect(screen.getByRole("switch", { name })).not.toBeChecked();
     }
     expect(screen.getByText("Where you can work from")).toBeInTheDocument();
@@ -200,3 +205,98 @@ describe("AtsSearchStep on the remote board", () => {
     ).toBeInTheDocument();
   });
 });
+
+describe("AtsSearchStep — JSearch settings", () => {
+  const user = userEvent.setup();
+  const withJSearch = (extra = {}) =>
+    ({
+      companies: [{ name: "JSearch", token: "jsearch" }],
+      targetTitles: ["Data Engineer"],
+      keywords: ["Spark", "Airflow"],
+      ...extra,
+    }) as any;
+
+  beforeEach(() => {
+    getUserApiKeys.mockReset();
+    getUserApiKeys.mockResolvedValue({ success: true, data: [] });
+  });
+
+  it("is off by default and shows no settings until switched on", () => {
+    render(
+      <AtsSearchStep
+        provider="remote"
+        value={{ companies: [{ name: "Himalayas", token: "himalayas" }] } as any}
+        onChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("switch", { name: "JSearch" })).not.toBeChecked();
+    expect(
+      screen.queryByRole("switch", { name: "Remote roles only" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("starts remote-only, and shows what a run costs against the free plan", async () => {
+    render(
+      <AtsSearchStep provider="remote" value={withJSearch()} onChange={vi.fn()} />,
+    );
+
+    expect(screen.getByRole("switch", { name: "Remote roles only" })).toBeChecked();
+    expect(screen.getByTestId("jsearch-usage").textContent).toMatch(
+      /Each run uses 3 requests \(3 search terms × 1\), about 90 a month.*free plan allows 200/,
+    );
+    await waitFor(() => expect(getUserApiKeys).toHaveBeenCalled());
+  });
+
+  it("warns that more results need a paid plan", () => {
+    render(
+      <AtsSearchStep
+        provider="remote"
+        value={withJSearch({ jsearch: { pagesPerTerm: 5 } })}
+        onChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByTestId("jsearch-usage").textContent).toMatch(
+      /15 requests.*about 450 a month.*needs a paid plan/,
+    );
+  });
+
+  it("saves remote-only off as an explicit setting", async () => {
+    const onChange = vi.fn();
+    render(
+      <AtsSearchStep provider="remote" value={withJSearch()} onChange={onChange} />,
+    );
+
+    await user.click(screen.getByRole("switch", { name: "Remote roles only" }));
+
+    expect(onChange.mock.calls[0][0].jsearch).toEqual({
+      remoteOnly: false,
+      pagesPerTerm: 1,
+      datePosted: "week",
+    });
+  });
+
+  it("points to API Keys when no JSearch key is saved", async () => {
+    render(
+      <AtsSearchStep provider="remote" value={withJSearch()} onChange={vi.fn()} />,
+    );
+
+    const link = await screen.findByRole("link", { name: /Settings → API Keys/ });
+    expect(link).toHaveAttribute("href", "/dashboard/settings?section=api-keys");
+  });
+
+  it("says nothing about keys when one is saved", async () => {
+    getUserApiKeys.mockResolvedValue({
+      success: true,
+      data: [{ provider: "jsearch-rapidapi" }],
+    });
+    render(
+      <AtsSearchStep provider="remote" value={withJSearch()} onChange={vi.fn()} />,
+    );
+
+    await waitFor(() => expect(getUserApiKeys).toHaveBeenCalled());
+    expect(screen.queryByText(/No JSearch key is saved/)).not.toBeInTheDocument();
+  });
+});
+

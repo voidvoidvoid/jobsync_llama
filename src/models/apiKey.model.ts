@@ -5,7 +5,9 @@ export type ApiKeyProvider =
   | "ollama"
   | "gemini"
   | "llamacpp"
-  | "llamacpp-key";
+  | "llamacpp-key"
+  | "jsearch"
+  | "jsearch-rapidapi";
 
 export interface ApiKeyRecord {
   id: string;

@@ -61,6 +61,8 @@ export async function runAtsRun(
     const { jobs, errors } = await provider.search(config.companies, {
       targetTitles: config.targetTitles,
       keywords: config.keywords,
+      userId: automation.userId,
+      jsearch: config.jsearch,
     });
 
     for (const err of errors) {

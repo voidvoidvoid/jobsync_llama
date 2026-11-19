@@ -3,6 +3,8 @@ import type { BoardErrorCode } from "@/models/notification.model";
 // Matches the strings the three ATS fetchers emit; the spec pins each one.
 export function classifyBoardError(reason: string): BoardErrorCode {
   if (reason === "rate limited") return "rate_limited";
+  // A source behind the user's own key (JSearch) that has none, or a bad one
+  if (/api key/i.test(reason)) return "auth";
   if (/timed out/i.test(reason)) return "timeout";
   if (/malformed/i.test(reason)) return "parse";
   const status = reason.match(/returned (\d{3})/)?.[1];

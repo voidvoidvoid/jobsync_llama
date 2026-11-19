@@ -1,5 +1,6 @@
 // Remote job feeds against a stubbed fetch: what each feed is asked for, how
-// its payload maps to a job, and how the three combine.
+// its payload maps to a job, and how they combine.
+vi.mock("@/lib/api-key-resolver", () => ({ resolveApiKey: vi.fn() }));
 vi.mock("@/lib/constants", async (orig) => {
   const actual = await (orig() as Promise<{ APP_CONSTANTS: object }>);
   return {

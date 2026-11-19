@@ -6,7 +6,8 @@ export type BoardErrorCode =
   | "rate_limited"
   | "http_error"
   | "parse"
-  | "network";
+  | "network"
+  | "auth";
 
 export interface RunPayload {
   status: "completed" | "completed_with_errors";
