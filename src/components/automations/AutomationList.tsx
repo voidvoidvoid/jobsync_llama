@@ -33,6 +33,8 @@ import {
   FileText,
   AlertTriangle,
   Zap,
+  PlayCircle,
+  Loader2,
 } from "lucide-react";
 import type { AutomationWithResume } from "@/models/automation.model";
 import { isRetiredBoard, jobBoardLabel } from "@/models/automation.model";
@@ -43,6 +45,7 @@ import {
 } from "@/actions/automation.actions";
 import { APP_CONSTANTS } from "@/lib/constants";
 import Link from "next/link";
+import { useListRunNow } from "./useListRunNow";
 
 interface AutomationListProps {
   automations: AutomationWithResume[];
@@ -58,6 +61,7 @@ export function AutomationList({
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
+  const { runNow, isStarting, isRunning } = useListRunNow(onRefresh);
 
   const handlePause = async (id: string) => {
     setLoadingAction(id);
@@ -278,48 +282,92 @@ export function AutomationList({
                 </div>
               </div>
 
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" disabled={isLoading} aria-label="More actions">
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {!retired &&
-                    (automation.status === "active" ? (
-                      <DropdownMenuItem
-                        onClick={() => handlePause(automation.id)}
+              <div className="flex items-center gap-1 shrink-0 ml-2">
+                {!retired &&
+                  (isRunning(automation.id) ? (
+                    <Button variant="outline" size="sm" asChild>
+                      <Link
+                        href={`/dashboard/automations/${automation.id}`}
+                        title="Open the automation to watch the run's log"
                       >
-                        <Pause className="h-4 w-4 mr-2" />
-                        Pause
-                      </DropdownMenuItem>
-                    ) : (
-                      <DropdownMenuItem
-                        onClick={() => handleResume(automation.id)}
-                        disabled={resumeMissing}
-                      >
-                        <Play className="h-4 w-4 mr-2" />
-                        Resume
-                      </DropdownMenuItem>
-                    ))}
-                  {!retired && (
-                    <>
-                      <DropdownMenuItem onClick={() => onEdit(automation)}>
-                        <Pencil className="h-4 w-4 mr-2" />
-                        Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                    </>
-                  )}
-                  <DropdownMenuItem
-                    className="text-destructive"
-                    onClick={() => setDeleteId(automation.id)}
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Running…
+                      </Link>
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => runNow(automation.id, automation.name)}
+                      disabled={
+                        isStarting(automation.id) ||
+                        resumeMissing ||
+                        automation.status === "paused"
+                      }
+                      title={
+                        resumeMissing
+                          ? "Select a resume before running"
+                          : automation.status === "paused"
+                            ? "Resume this automation to run it"
+                            : "Run this automation now instead of waiting for its schedule"
+                      }
+                    >
+                      {isStarting(automation.id) ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <PlayCircle className="h-4 w-4 mr-2" />
+                      )}
+                      Run now
+                    </Button>
+                  ))}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      disabled={isLoading}
+                      aria-label="More actions"
+                    >
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {!retired &&
+                      (automation.status === "active" ? (
+                        <DropdownMenuItem
+                          onClick={() => handlePause(automation.id)}
+                        >
+                          <Pause className="h-4 w-4 mr-2" />
+                          Pause
+                        </DropdownMenuItem>
+                      ) : (
+                        <DropdownMenuItem
+                          onClick={() => handleResume(automation.id)}
+                          disabled={resumeMissing}
+                        >
+                          <Play className="h-4 w-4 mr-2" />
+                          Resume
+                        </DropdownMenuItem>
+                      ))}
+                    {!retired && (
+                      <>
+                        <DropdownMenuItem onClick={() => onEdit(automation)}>
+                          <Pencil className="h-4 w-4 mr-2" />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                      </>
+                    )}
+                    <DropdownMenuItem
+                      className="text-destructive"
+                      onClick={() => setDeleteId(automation.id)}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
           );
         })}

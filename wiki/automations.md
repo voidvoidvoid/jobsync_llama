@@ -83,7 +83,7 @@ Listings only reach AI analysis if they are related to your search strongly enou
 
 ## When does it run, and can I run one now?
 
-An automation runs daily at the hour you chose, in the server's timezone, as long as its status is **active**. Open an automation to run it immediately with **Run Now** — manual runs are limited to **5 per hour**. A run in progress can be stopped with **Abort Run**.
+An automation runs daily at the hour you chose, in the server's timezone, as long as its status is **active**. To run one now, click **Run now** on its row in the list or on its page; manual runs are limited to **5 per hour**. In the list it shows **Running…**, which opens the log, and a message gives the result. Stop a run with **Abort Run** on its page.
 
 The automation's page has three tabs: **Logs** (live output from the current or most recent run), **Discovered Jobs**, and **Run History** (past runs with counts and timings).
 
