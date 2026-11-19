@@ -77,10 +77,16 @@ export interface GreenhouseCompany {
   token: string;
 }
 
+export type ExcludeScope = "all" | "title";
+
 export interface GreenhouseSourceConfig {
   companies: GreenhouseCompany[];
   targetTitles?: string[];
   keywords?: string[];
+  // A listing containing any of these words is dropped before ranking
+  excludeKeywords?: string[];
+  // Where to look for them: title and description (default) or title only
+  excludeIn?: ExcludeScope;
   locations?: string[];
   strictLocation?: boolean;
   topK?: number;

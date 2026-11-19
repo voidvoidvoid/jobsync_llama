@@ -32,6 +32,7 @@ export function EntityStringChipInput({
   onChange,
   loadOptions,
   createOption,
+  plainWords = false,
 }: {
   label: string;
   description: string;
@@ -41,6 +42,8 @@ export function EntityStringChipInput({
   onChange: (next: string[]) => void;
   loadOptions: () => Promise<EntityOption[]>;
   createOption: (label: string) => Promise<EntityOption | null>;
+  // A free-text list with nothing to search: "Add" rather than "Create"
+  plainWords?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
@@ -120,7 +123,7 @@ export function EntityStringChipInput({
         >
           <Command shouldFilter={false}>
             <CommandInput
-              placeholder={`Search or create ${noun}...`}
+              placeholder={plainWords ? `Type a ${noun}...` : `Search or create ${noun}...`}
               value={input}
               onValueChange={setInput}
             />
@@ -132,7 +135,11 @@ export function EntityStringChipInput({
                 </div>
               )}
               {!isLoading && !input.trim() && filtered.length === 0 && (
-                <CommandEmpty>No {noun}s found. Type to create one.</CommandEmpty>
+                <CommandEmpty>
+                  {plainWords
+                    ? "Type a word or phrase, then add it."
+                    : `No ${noun}s found. Type to create one.`}
+                </CommandEmpty>
               )}
               {input.trim() && alreadyAdded && (
                 <CommandEmpty>Already added.</CommandEmpty>
@@ -162,7 +169,7 @@ export function EntityStringChipInput({
                     ) : (
                       <CirclePlus className="h-4 w-4 mr-2" />
                     )}
-                    Create &quot;{input.trim()}&quot;
+                    {plainWords ? "Add" : "Create"} &quot;{input.trim()}&quot;
                   </CommandItem>
                 </CommandGroup>
               )}

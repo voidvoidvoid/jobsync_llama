@@ -179,6 +179,35 @@ describe("CreateAutomationSchema conditional validation", () => {
     expect(result.success).toBe(false);
   });
 
+  it("accepts exclude keywords and where to look for them", () => {
+    const result = CreateAutomationSchema.safeParse({
+      ...base,
+      jobBoard: "greenhouse",
+      sourceConfig: {
+        greenhouse: {
+          companies: [{ name: "Acme", token: "acme" }],
+          excludeKeywords: ["Senior", "security clearance"],
+          excludeIn: "title",
+        },
+      },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects a blank exclude keyword", () => {
+    const result = CreateAutomationSchema.safeParse({
+      ...base,
+      jobBoard: "greenhouse",
+      sourceConfig: {
+        greenhouse: {
+          companies: [{ name: "Acme", token: "acme" }],
+          excludeKeywords: ["   "],
+        },
+      },
+    });
+    expect(result.success).toBe(false);
+  });
+
   describe("ai-match", () => {
     const config = {
       maxJobs: 25,

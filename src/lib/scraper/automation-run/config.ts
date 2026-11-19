@@ -1,10 +1,16 @@
 import { APP_CONSTANTS } from "@/lib/constants";
-import type { JobBoard, JSearchOptions } from "@/models/automation.model";
+import type {
+  ExcludeScope,
+  JobBoard,
+  JSearchOptions,
+} from "@/models/automation.model";
 
 export interface AtsRunConfig {
   companies: { name: string; token: string; host?: "default" | "eu" }[];
   targetTitles: string[];
   keywords: string[];
+  excludeKeywords: string[];
+  excludeIn: ExcludeScope;
   locations: string[];
   strictLocation: boolean;
   topK: number;
@@ -26,6 +32,12 @@ export function parseAtsConfig(
       companies: cfg.companies,
       targetTitles: Array.isArray(cfg.targetTitles) ? cfg.targetTitles : [],
       keywords: Array.isArray(cfg.keywords) ? cfg.keywords : [],
+      excludeKeywords: Array.isArray(cfg.excludeKeywords)
+        ? cfg.excludeKeywords.filter(
+            (t: unknown): t is string => typeof t === "string" && t.trim() !== "",
+          )
+        : [],
+      excludeIn: cfg.excludeIn === "title" ? "title" : "all",
       locations: Array.isArray(cfg.locations) ? cfg.locations : [],
       strictLocation: !!cfg.strictLocation,
       topK:

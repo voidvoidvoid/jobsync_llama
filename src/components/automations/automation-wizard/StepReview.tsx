@@ -87,6 +87,16 @@ export function StepReview({
         </span>
       </div>
       <div className="flex justify-between gap-4">
+        <span className="text-muted-foreground">Excluding</span>
+        <span className="font-medium text-right">
+          {atsConfig.excludeKeywords?.length
+            ? `${atsConfig.excludeKeywords.join(", ")}${
+                atsConfig.excludeIn === "title" ? " (title only)" : ""
+              }`
+            : "None"}
+        </span>
+      </div>
+      <div className="flex justify-between gap-4">
         <span className="text-muted-foreground">Locations</span>
         <span className="font-medium text-right">
           {atsConfig.locations?.length

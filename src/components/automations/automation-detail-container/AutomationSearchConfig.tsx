@@ -151,6 +151,16 @@ export function AutomationSearchConfig({
             </p>
           </div>
           <div>
+            <p className="text-sm text-muted-foreground">Excluding</p>
+            <p className="text-sm font-medium">
+              {greenhouseConfig.excludeKeywords?.length
+                ? `${greenhouseConfig.excludeKeywords.join(", ")}${
+                    greenhouseConfig.excludeIn === "title" ? " (title only)" : ""
+                  }`
+                : "None"}
+            </p>
+          </div>
+          <div>
             <p className="text-sm text-muted-foreground">Locations</p>
             <p className="text-sm font-medium">
               {greenhouseConfig.locations?.length

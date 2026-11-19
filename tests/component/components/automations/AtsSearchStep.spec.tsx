@@ -300,3 +300,47 @@ describe("AtsSearchStep — JSearch settings", () => {
   });
 });
 
+
+describe("AtsSearchStep — exclude keywords", () => {
+  const user = userEvent.setup();
+  const base = { companies: [{ name: "Acme", token: "acme" }] } as any;
+
+  it("adds a word as plain text, without creating a tag", async () => {
+    const { createTag } = await import("@/actions/tag.actions");
+    const onChange = vi.fn();
+    render(<AtsSearchStep provider="greenhouse" value={base} onChange={onChange} />);
+
+    await user.click(screen.getByRole("button", { name: /e\.g\., Senior, Clearance/ }));
+    await user.type(screen.getByPlaceholderText("Type a word to exclude..."), "Clearance");
+    await user.click(await screen.findByText('Add "Clearance"'));
+
+    await waitFor(() =>
+      expect(onChange).toHaveBeenCalledWith(
+        expect.objectContaining({ excludeKeywords: ["Clearance"] }),
+      ),
+    );
+    expect(createTag).not.toHaveBeenCalled();
+  });
+
+  it("asks where to look only once there are words, defaulting to title and description", async () => {
+    const { rerender } = render(
+      <AtsSearchStep provider="greenhouse" value={base} onChange={vi.fn()} />,
+    );
+    expect(screen.queryByText("Look for excluded words in")).toBeNull();
+
+    const onChange = vi.fn();
+    rerender(
+      <AtsSearchStep
+        provider="greenhouse"
+        value={{ ...base, excludeKeywords: ["Senior"] }}
+        onChange={onChange}
+      />,
+    );
+
+    expect(screen.getByRole("radio", { name: "Title and description" })).toBeChecked();
+    await user.click(screen.getByRole("radio", { name: "Title only" }));
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ excludeIn: "title" }),
+    );
+  });
+});

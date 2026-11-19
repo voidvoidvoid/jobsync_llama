@@ -35,7 +35,7 @@ What you type under **Target job titles** and **Keywords / skills** does double 
 
 With no titles and no keywords the boards are only asked for their newest postings and nothing can be ranked, so the run saves nothing. The wizard shows an amber warning when both are empty.
 
-The skills on your matching resume still count toward ranking, as they do for company boards, but they are not sent to the boards as searches.
+The skills on your matching resume still count toward ranking, as they do for company boards, but they are not sent to the boards as searches. **Exclude keywords** work as they do for company boards: a listing containing one is dropped before ranking.
 
 Ranking is simpler here than on company boards. There, a rare word outweighs a common one; here every matching title word or keyword counts the same, because results that were fetched by searching for your terms all contain them. The more of your terms a listing matches, the higher it ranks.
 

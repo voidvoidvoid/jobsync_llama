@@ -147,6 +147,7 @@ export function AutomationList({
           const atsTitles: string[] = ats?.targetTitles ?? [];
           const atsLocations: string[] = ats?.locations ?? [];
           const atsKeywords: string[] = ats?.keywords ?? [];
+          const atsExclude: string[] = ats?.excludeKeywords ?? [];
           const atsTopK: number = ats?.topK ?? APP_CONSTANTS.MAX_JOBS_PER_RUN;
           const atsSaveUnanalyzed: boolean = ats?.saveUnanalyzed !== false;
           const aiMatch = isAiMatchBoard(automation.jobBoard)
@@ -259,6 +260,15 @@ export function AutomationList({
                         </span>{" "}
                         {atsKeywords.length ? atsKeywords.join(", ") : "Any"}
                       </span>
+                      {atsExclude.length > 0 && (
+                        <span>
+                          <span className="font-medium text-foreground">
+                            Excluding:
+                          </span>{" "}
+                          {atsExclude.join(", ")}
+                          {ats?.excludeIn === "title" ? " (title only)" : ""}
+                        </span>
+                      )}
                       <span>
                         <span className="font-medium text-foreground">
                           Location:

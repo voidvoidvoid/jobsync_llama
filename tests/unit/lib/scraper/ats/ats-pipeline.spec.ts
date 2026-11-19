@@ -137,3 +137,94 @@ describe("runAtsPipeline", () => {
     );
   });
 });
+
+describe("runAtsPipeline – exclude keywords", () => {
+  const withExclude = (excludeKeywords: string[], excludeIn?: "all" | "title") => ({
+    ...config,
+    excludeKeywords,
+    excludeIn,
+  });
+
+  it("drops a listing containing an exclude word before it is ranked", () => {
+    const jobs = [
+      job({ title: "Frontend Engineer", description: "React, TypeScript" }),
+      job({ title: "Senior Frontend Engineer", description: "React, TypeScript" }),
+    ];
+
+    const result = runAtsPipeline(jobs, withExclude(["senior"]), []);
+
+    const titles = [...result.toAnalyze, ...result.toSaveUnanalyzed].map((s) => s.job.title);
+    expect(titles).toEqual(["Frontend Engineer"]);
+    expect(result.funnel.excluded).toBe(1);
+    expect(result.funnel.excludedBy).toEqual({ senior: 1 });
+  });
+
+  it("looks in the description too, by default, ignoring its HTML", () => {
+    const jobs = [
+      job({ title: "Frontend Engineer", description: "<p>Active <b>Clearance</b> needed</p>" }),
+    ];
+
+    const result = runAtsPipeline(jobs, withExclude(["clearance"]), []);
+
+    expect(result.funnel.excluded).toBe(0);
+  });
+
+  it("can look in the title only", () => {
+    const jobs = [
+      job({ title: "Frontend Engineer", description: "No clearance required. React" }),
+    ];
+
+    const result = runAtsPipeline(jobs, withExclude(["clearance"], "title"), []);
+
+    expect(result.funnel.excluded).toBe(1);
+    expect(result.funnel.relevant).toBe(1);
+  });
+
+  it("matches whole words and phrases, case ignored", () => {
+    const jobs = [
+      job({ title: "JavaScript Engineer", description: "React" }), // not "java"
+      job({ title: "Java Engineer", description: "React" }),
+      job({ title: "Frontend Engineer", description: "Must hold a SECURITY CLEARANCE. React" }),
+    ];
+
+    const result = runAtsPipeline(
+      jobs,
+      withExclude(["Java", "security clearance"]),
+      [],
+    );
+
+    expect(result.funnel.excluded).toBe(1);
+    expect(result.funnel.excludedBy).toEqual({ Java: 1, "security clearance": 1 });
+  });
+
+  it("counts a listing once, under the first word it contains", () => {
+    const jobs = [job({ title: "Senior Staff Engineer", description: "React" })];
+
+    const result = runAtsPipeline(jobs, withExclude(["staff", "senior"]), []);
+
+    expect(result.funnel.excludedBy).toEqual({ staff: 1 });
+  });
+
+  it("reports no exclusion stage when no words are set", () => {
+    const result = runAtsPipeline([job({ title: "Frontend Engineer" })], config, []);
+
+    expect(result.funnel.excluded).toBeNull();
+    expect(result.funnel.excludedBy).toEqual({});
+  });
+
+  it("applies exclusions before the location gate", () => {
+    const jobs = [
+      job({ title: "Senior Frontend Engineer", location: "Canada", description: "React" }),
+      job({ title: "Frontend Engineer", location: "Canada", description: "React" }),
+    ];
+
+    const result = runAtsPipeline(
+      jobs,
+      { ...withExclude(["senior"]), strictLocation: true },
+      [],
+    );
+
+    expect(result.funnel.excluded).toBe(1);
+    expect(result.funnel.located).toBe(1);
+  });
+});

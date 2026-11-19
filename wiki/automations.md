@@ -50,11 +50,12 @@ Watching a company adds it to your Library, so a company you already track just 
 
 ## How do I set up filters so the automation returns good results?
 
-**Fill in the filters. This is the single biggest factor in whether an automation is useful.** A company board can carry hundreds of listings across every department; the filters are what turn that into a short list worth your attention.
+**Fill in the filters: they decide whether an automation is useful.** A company board can carry hundreds of listings; the filters turn that into a short list.
 
 - **Target job titles** — the roles you actually want, e.g. `Frontend Engineer`, `Staff Software Engineer`. A listing whose title matches one of these ranks far higher than one that does not.
 - **Keywords / skills** — the technologies and terms that describe your work, e.g. `React`, `TypeScript`, `Kubernetes`. These are matched against both the title and the full description, so they catch good roles whose title is worded oddly.
-- **Locations** — the cities, provinces/states or countries you would work in, e.g. `Calgary`, `Seattle`, `San Francisco`, `Canada`. Locations do **not** affect ranking on their own. They only take effect when you turn on **Only show jobs in these locations**, which drops non-matching listings before ranking. Avoid adding `Remote` here: a listing matches if its location text contains any of your entries, so `Remote` lets through remote roles anywhere in the world, including places you cannot work.
+- **Exclude keywords** — words that rule a listing out, e.g. `Senior`, `Clearance`. A listing containing any of them is dropped first, never saved or analyzed. **Title only** avoids words mentioned in passing.
+- **Locations** — the cities, provinces/states or countries you would work in, e.g. `Calgary`, `Seattle`, `San Francisco`, `Canada`. Locations do **not** affect ranking on their own. They only take effect when you turn on **Only show jobs in these locations**, which drops non-matching listings before ranking. Avoid `Remote` here: it lets through remote roles anywhere in the world.
 
 Add several of each rather than one. Specific terms count for more than generic ones — `kubernetes` is worth more than `engineer`, which appears in almost every listing.
 

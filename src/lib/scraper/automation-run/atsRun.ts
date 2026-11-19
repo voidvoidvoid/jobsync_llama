@@ -168,6 +168,21 @@ export async function runAtsRun(
       neutralWeights: provider.keywordSearched,
     });
 
+    if (pipeline.funnel.excluded !== null) {
+      const removed = jobsDeduplicated - pipeline.funnel.excluded;
+      const byWord = Object.entries(pipeline.funnel.excludedBy)
+        .sort((a, b) => b[1] - a[1])
+        .map(([word, n]) => `${word}: ${n}`)
+        .join(", ");
+      automationLogger.log(
+        automation.id,
+        "info",
+        removed > 0
+          ? `${label} ${removed} listing(s) dropped by exclude keywords (${byWord})`
+          : `${label} No listings contained an exclude keyword`,
+      );
+    }
+
     if (config.strictLocation && config.locations.length > 0) {
       automationLogger.log(
         automation.id,
@@ -198,6 +213,13 @@ export async function runAtsRun(
         { key: "fetched", label: "Fetched", count: jobsSearched },
         { key: "dedup", label: "New", count: jobsDeduplicated },
       ];
+      if (pipeline.funnel.excluded !== null) {
+        stages.push({
+          key: "excluded",
+          label: "Not excluded",
+          count: pipeline.funnel.excluded,
+        });
+      }
       if (pipeline.funnel.located !== null) {
         stages.push({
           key: "located",
@@ -232,6 +254,8 @@ export async function runAtsRun(
       let reason: string;
       if (beforeDedup.funnel.relevant > 0) {
         reason = `all ${beforeDedup.funnel.relevant} matching job(s) on these boards are already in your list — no new postings since the last run`;
+      } else if (pipeline.funnel.excluded === 0) {
+        reason = `all ${jobsDeduplicated} new job(s) contained an exclude keyword`;
       } else if (pipeline.funnel.located === 0) {
         reason = `none of the ${jobsDeduplicated} new job(s) matched your location filter (${config.locations.join(", ")})`;
       } else {

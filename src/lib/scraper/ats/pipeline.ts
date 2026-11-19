@@ -1,13 +1,41 @@
 import { APP_CONSTANTS } from "@/lib/constants";
 import type { PrerankComponents } from "@/models/ai.schemas";
 import type { JobDetails } from "../types";
-import { scoreJob, passesFloor, locationMatches, buildIdf } from "./rank";
+import {
+  scoreJob,
+  passesFloor,
+  locationMatches,
+  buildIdf,
+  termInText,
+} from "./rank";
 
 export interface PipelineConfig {
   targetTitles: string[];
   keywords: string[];
   locations: string[];
   strictLocation: boolean;
+  // Words that disqualify a listing, and where to look for them
+  excludeKeywords?: string[];
+  excludeIn?: "all" | "title";
+}
+
+// The first exclude word a listing contains, or null. Whole words and phrases
+// only, as keywords are matched ("java" does not exclude "JavaScript"), case
+// ignored, in the title and (unless "title") the description's text.
+export function firstExcludedWord(
+  job: JobDetails,
+  words: string[],
+  scope: "all" | "title" = "all",
+): string | null {
+  if (words.length === 0) return null;
+  const text =
+    scope === "title"
+      ? job.title
+      : `${job.title} ${(job.description ?? "").replace(/<[^>]+>/g, " ")}`;
+  for (const word of words) {
+    if (termInText(text, word)) return word.trim();
+  }
+  return null;
 }
 
 export interface ScoredJob {
@@ -23,7 +51,10 @@ export interface PipelineResult {
   toSaveUnanalyzed: ScoredJob[];
   funnel: {
     deduped: number; // jobs handed in (already deduped by the runner)
+    excluded: number | null; // survivors after exclude keywords (null if none set)
     located: number | null; // survivors after strict location gate (null if off)
+    // How many listings each exclude word removed (first matching word only)
+    excludedBy: Record<string, number>;
     floorSurvivors: number; // jobs clearing the floor, before the cap ceiling
     scoreCut: number; // floor survivors dropped by the minimum-score gate
     relevant: number; // survivors after the score gate and cap (the LLM budget)
@@ -58,15 +89,30 @@ export function runAtsPipeline(
     ? () => 1
     : buildIdf(options?.corpus ?? fetchedJobs);
 
+  // Exclude keywords first: a disqualified listing is never ranked, saved or
+  // sent to the AI, whatever else it matches.
+  const excludeWords = (config.excludeKeywords ?? []).filter((w) => w.trim());
+  const excludedBy: Record<string, number> = {};
+  const kept =
+    excludeWords.length > 0
+      ? fetchedJobs.filter((job) => {
+          const word = firstExcludedWord(job, excludeWords, config.excludeIn);
+          if (word === null) return true;
+          excludedBy[word] = (excludedBy[word] ?? 0) + 1;
+          return false;
+        })
+      : null;
+
   const gateActive = config.strictLocation && config.locations.length > 0;
   const matchesLocation = options?.locationMatcher ?? locationMatches;
+  const afterExclude = kept ?? fetchedJobs;
   const located = gateActive
-    ? fetchedJobs.filter((job) =>
+    ? afterExclude.filter((job) =>
         matchesLocation(job.location, config.locations),
       )
     : null;
 
-  const working = located ?? fetchedJobs;
+  const working = located ?? afterExclude;
 
   const scored: ScoredJob[] = working.map((job) => {
     const { score, components } = scoreJob(
@@ -107,6 +153,8 @@ export function runAtsPipeline(
     toSaveUnanalyzed: capped.slice(k),
     funnel: {
       deduped,
+      excluded: kept ? kept.length : null,
+      excludedBy,
       located: located ? located.length : null,
       floorSurvivors: floorSurvivors.length,
       scoreCut: floorSurvivors.length - ranked.length,

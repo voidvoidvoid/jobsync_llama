@@ -36,6 +36,8 @@ export const GreenhouseSourceConfigSchema = z.object({
     .max(APP_CONSTANTS.ATS_MAX_COMPANIES),
   targetTitles: z.array(z.string().min(1).max(100)).optional(),
   keywords: z.array(z.string().min(1).max(100)).optional(),
+  excludeKeywords: z.array(z.string().trim().min(1).max(100)).max(100).optional(),
+  excludeIn: z.enum(["all", "title"]).optional(),
   locations: z.array(z.string().min(1).max(100)).optional(),
   strictLocation: z.boolean().optional(),
   topK: z.number().int().min(1).max(APP_CONSTANTS.ATS_LISTING_CAP).optional(),

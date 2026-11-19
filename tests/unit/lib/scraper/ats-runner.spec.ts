@@ -172,6 +172,59 @@ describe("runAutomation (lever)", () => {
     expect(result.jobsSaved).toBe(1);
   });
 
+  describe("exclude keywords", () => {
+    const withExclude = (excludeKeywords: string[]): Automation => ({
+      ...leverAutomation,
+      sourceConfig: JSON.stringify({
+        lever: {
+          companies: [{ name: "Acme", token: "acme", host: "eu" }],
+          targetTitles: ["Frontend Engineer"],
+          keywords: [],
+          locations: [],
+          strictLocation: false,
+          excludeKeywords,
+        },
+      }),
+    });
+
+    it("never saves or analyzes an excluded listing", async () => {
+      (searchLeverJobs as any).mockResolvedValue({
+        jobs: [
+          makeJob("Frontend Engineer", "React"),
+          makeJob("Senior Frontend Engineer", "React"),
+        ],
+        errors: [],
+      });
+
+      const result = await runAutomation(withExclude(["senior"]));
+
+      expect(result.jobsSaved).toBe(1);
+      expect(generateText).toHaveBeenCalledTimes(1);
+      const saved = (prisma.job.create as any).mock.calls.map(
+        (c: any) => c[0].data.description,
+      );
+      expect(saved).toHaveLength(1);
+      const run = (prisma.automationRun.update as any).mock.calls.at(-1)[0].data;
+      expect(JSON.parse(run.funnelStats)).toContainEqual({
+        key: "excluded",
+        label: "Not excluded",
+        count: 1,
+      });
+    });
+
+    it("says when every new listing was excluded", async () => {
+      (searchLeverJobs as any).mockResolvedValue({
+        jobs: [makeJob("Senior Frontend Engineer", "React")],
+        errors: [],
+      });
+
+      const result = await runAutomation(withExclude(["senior"]));
+
+      expect(result.jobsSaved).toBe(0);
+      expect(generateText).not.toHaveBeenCalled();
+    });
+  });
+
   describe("remote job boards", () => {
     const remoteAutomation: Automation = {
       ...leverAutomation,

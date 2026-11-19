@@ -3,6 +3,7 @@
 import { TriangleAlert } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { getAllJobTitles, createJobTitle } from "@/actions/jobtitle.actions";
 import { getAllTags, createTag } from "@/actions/tag.actions";
 import { getAllJobLocations } from "@/actions/jobLocation.actions";
@@ -72,6 +73,50 @@ export function TargetingFields({
           return res?.success ? res.data : null;
         }}
       />
+
+      <EntityStringChipInput
+        label="Exclude keywords"
+        placeholder="e.g., Senior, Clearance"
+        noun="word to exclude"
+        plainWords
+        description="Optional. A listing containing any of these words or phrases is dropped before ranking, never saved or sent to the AI. Whole words only, case ignored."
+        values={value.excludeKeywords ?? []}
+        onChange={(next) => onChange({ ...value, excludeKeywords: next })}
+        // Plain words, kept only on this automation: no suggestions, and
+        // nothing is added to your tags.
+        loadOptions={async () => []}
+        createOption={async (lbl) => ({ id: lbl, label: lbl, value: lbl })}
+      />
+
+      {(value.excludeKeywords?.length ?? 0) > 0 && (
+        <div className="space-y-2 -mt-2">
+          <Label>Look for excluded words in</Label>
+          <RadioGroup
+            value={value.excludeIn ?? "all"}
+            onValueChange={(v) =>
+              onChange({ ...value, excludeIn: v as "all" | "title" })
+            }
+            className="flex flex-wrap gap-x-6 gap-y-1"
+          >
+            <div className="flex items-center gap-2">
+              <RadioGroupItem value="all" id="exclude-in-all" />
+              <Label htmlFor="exclude-in-all" className="font-normal">
+                Title and description
+              </Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <RadioGroupItem value="title" id="exclude-in-title" />
+              <Label htmlFor="exclude-in-title" className="font-normal">
+                Title only
+              </Label>
+            </div>
+          </RadioGroup>
+          <p className="text-sm text-muted-foreground">
+            Descriptions often mention a word in passing (&quot;no clearance
+            required&quot;), so title only drops fewer listings by mistake.
+          </p>
+        </div>
+      )}
 
       {noSignal && (
         <div className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-400">
