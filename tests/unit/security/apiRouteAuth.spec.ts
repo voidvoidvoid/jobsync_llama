@@ -17,7 +17,7 @@ import { applyExceptions, ROUTE_EXCEPTIONS } from "./exceptions";
 
 const API_DIR = path.join(process.cwd(), "src/app/api");
 const PROXY_FILE = path.join(process.cwd(), "src/proxy.ts");
-const REAL_MATCHER = ["/dashboard", "/dashboard/:path*", "/api/((?!auth|mcp).*)"];
+const REAL_MATCHER = ["/dashboard", "/dashboard/:path*", "/api/((?!auth|mcp|extension).*)"];
 
 function routeFiles(dir: string): string[] {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {

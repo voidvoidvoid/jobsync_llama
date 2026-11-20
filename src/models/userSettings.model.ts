@@ -1,3 +1,4 @@
+import type { SavedAnswer } from "@/lib/autofill/types";
 import { AiProvider } from "./ai.model";
 import type { GoalTargetsByMonth } from "./dailyGoals.model";
 
@@ -57,11 +58,17 @@ export function normalizeDealBreakers(
   };
 }
 
+// Answers the browser extension reuses on application forms
+export interface AutofillSettings {
+  answers: SavedAnswer[];
+}
+
 export interface UserSettingsData {
   ai: AiSettings;
   display: DisplaySettings;
   goals?: GoalSettings;
   dealBreakers?: DealBreakerSettings;
+  autofill?: AutofillSettings;
 }
 
 export interface UserSettings {

@@ -6,6 +6,7 @@ import AiSettings from "@/components/settings/AiSettings";
 import ApiKeySettings from "@/components/settings/ApiKeySettings";
 import DataSettings from "@/components/settings/DataSettings";
 import DealBreakerSettings from "@/components/settings/DealBreakerSettings";
+import AutofillSettings from "@/components/settings/AutofillSettings";
 import DisplaySettings from "@/components/settings/DisplaySettings";
 import McpAccessSettings from "@/components/settings/McpAccessSettings";
 import SettingsSidebar, { type SettingsSection } from "@/components/settings/SettingsSidebar";
@@ -14,6 +15,7 @@ const SECTIONS: SettingsSection[] = [
   "ai-provider",
   "api-keys",
   "deal-breakers",
+  "autofill",
   "appearance",
   "mcp-access",
   "data",
@@ -48,6 +50,7 @@ function SettingsContent() {
           {activeSection === "ai-provider" && <AiSettings />}
           {activeSection === "api-keys" && <ApiKeySettings />}
           {activeSection === "deal-breakers" && <DealBreakerSettings />}
+          {activeSection === "autofill" && <AutofillSettings />}
           {activeSection === "appearance" && <DisplaySettings />}
           {activeSection === "mcp-access" && <McpAccessSettings />}
           {activeSection === "data" && <DataSettings />}

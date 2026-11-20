@@ -35,6 +35,14 @@ export function applyExceptions<F extends FindingKey>(
 
 const NEXTAUTH = "src/app/api/auth/[...nextauth]/route.ts";
 const MCP = "src/app/api/mcp/route.ts";
+const EXTENSION_ROUTES: Array<[string, string[]]> = [
+  ["answers", ["GET", "POST"]],
+  ["applied", ["POST"]],
+  ["fill", ["POST"]],
+  ["resume", ["GET"]],
+  ["status", ["GET"]],
+];
+const extensionRoute = (name: string) => `src/app/api/extension/${name}/route.ts`;
 
 export const ROUTE_EXCEPTIONS: SecurityException[] = [
   {
@@ -79,6 +87,29 @@ export const ROUTE_EXCEPTIONS: SecurityException[] = [
     category: "alternate-auth",
     reason: "Proxy matcher excludes /api/mcp; the route checks its own PAT",
   },
+  ...EXTENSION_ROUTES.flatMap(([name, methods]) => [
+    ...methods.map((target) => ({
+      file: extensionRoute(name),
+      target,
+      check: "auth-call",
+      category: "alternate-auth" as const,
+      reason: "PAT auth through authenticate() -> resolveMcpToken (src/lib/autofill/http.ts)",
+    })),
+    {
+      file: extensionRoute(name),
+      target: "OPTIONS",
+      check: "unresolved-handler",
+      category: "public" as const,
+      reason: "CORS preflight: returns 204 with headers for extension origins only, touches no data",
+    },
+    {
+      file: extensionRoute(name),
+      target: `/api/extension/${name}`,
+      check: "proxy-coverage",
+      category: "alternate-auth" as const,
+      reason: "Proxy matcher excludes /api/extension; the Firefox extension sends a PAT, not a session",
+    },
+  ]),
 ];
 
 // Models with no owner, exempt from the ownership check by delegate name.

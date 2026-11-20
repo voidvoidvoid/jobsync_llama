@@ -23,6 +23,9 @@ RUN npx -y prisma@7.10.1 generate
 # Boot scripts (resolve-db-url, wait-for-db, migrate-deploy), compiled to plain CommonJS
 RUN npx tsc -p scripts/tsconfig.json
 
+# Firefox extension, served from /extension/jobsync-autofill.xpi
+RUN npm run build:extension
+
 RUN npm run build
 
 # Production image, copy all the files and run next

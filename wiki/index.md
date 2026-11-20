@@ -16,6 +16,7 @@ JobSync tracks job applications, resumes and the work you do around them. These 
 - [Remote Job Search](./remote-job-search.md) — search remote job boards by job title and keyword with no company list, and keep only roles open to where you live.
 - [AI Matching](./ai-matching.md) — score saved jobs that have no AI match, daily, newest or oldest first.
 - [Deal Breakers](./deal-breakers.md) — list conditions you will not accept, so AI matches flag jobs that have them and move them to Withdrawn.
+- [Application Autofill](./application-autofill.md) — fill in job application forms in Firefox from your resume, saved answers and AI provider, then review and submit.
 - [Tasks](./tasks.md) — add to-dos with a priority and due date, find them with the status filter and activity-type panel, mark them done, and start a timed activity from one.
 - [Activities](./activities.md) — time the work you do with a start/stop timer and breaks, log time after the fact, and see your hours on the Dashboard.
 - [Data Backup](./backup.md) — download everything as one zip, import it on any instance, and undo an import.

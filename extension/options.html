@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>JobSync Autofill settings</title>
+<style>
+  body { font: 14px/1.5 system-ui, sans-serif; max-width: 560px; margin: 32px auto; padding: 0 16px; color: #111; background: #fff; }
+  @media (prefers-color-scheme: dark) { body { color: #f4f4f5; background: #18181b; } input { background: #27272a; color: #f4f4f5; } }
+  label { display: block; font-weight: 600; margin-top: 16px; }
+  input { width: 100%; box-sizing: border-box; padding: 6px 8px; margin-top: 4px; border: 1px solid #a1a1aa; border-radius: 6px; font: inherit; }
+  .hint { font-size: 12px; opacity: .75; margin: 4px 0 0; }
+  .row { display: flex; gap: 8px; margin-top: 20px; }
+  button { font: inherit; padding: 6px 14px; border-radius: 6px; border: 1px solid #2563eb; background: #2563eb; color: #fff; cursor: pointer; }
+  button.secondary { background: transparent; color: inherit; border-color: #a1a1aa; }
+  #status { margin-top: 16px; white-space: pre-wrap; }
+  .ok { color: #16a34a; } .bad { color: #dc2626; }
+</style>
+</head>
+<body>
+  <h1>JobSync Autofill</h1>
+  <p>Connect the extension to your JobSync. Both values are under <strong>Settings → Application Autofill</strong> in JobSync.</p>
+  <form id="form">
+    <label for="baseUrl">JobSync address</label>
+    <input id="baseUrl" placeholder="http://192.168.1.10:3737" autocomplete="off" required>
+    <p class="hint">The address you open JobSync at, without a path.</p>
+    <label for="token">Access token</label>
+    <input id="token" type="password" placeholder="jsync_..." autocomplete="off" required>
+    <div class="row">
+      <button type="submit">Save and test</button>
+      <button type="button" class="secondary" id="grant">Grant site access</button>
+    </div>
+  </form>
+  <div id="status" role="status"></div>
+  <h2>Using it</h2>
+  <p>Open a job application and click the JobSync button in the toolbar, or press Alt+Shift+J. Fields turn green (from your profile or saved answers), yellow (AI) or red (needs you). Nothing is submitted for you.</p>
+  <script src="options.js"></script>
+</body>
+</html>

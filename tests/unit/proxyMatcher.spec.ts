@@ -19,6 +19,7 @@ describe("proxy matcher", () => {
     "/api/auth/session",
     "/api/auth/callback/credentials",
     "/api/mcp",
+    "/api/extension/fill",
     "/signin",
     "/",
   ])("leaves %s unguarded", (url) => {

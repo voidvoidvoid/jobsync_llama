@@ -1,0 +1,1 @@
+Add the JobSync Autofill Firefox extension: on a job application it fills contact details from your profile, reuses saved answers, asks your AI provider for the rest, attaches your resume, and shows a review panel; sensitive questions are never guessed. Manage saved answers and extension tokens under Settings → Application Autofill.

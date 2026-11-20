@@ -7,6 +7,7 @@ export const AI_USAGE_FEATURES = {
   resume_review: "Resume review",
   cover_letter: "Cover letter",
   resume_import: "Resume import",
+  autofill: "Application autofill",
 } as const;
 
 export type AiUsageFeature = keyof typeof AI_USAGE_FEATURES;
