@@ -20,6 +20,10 @@ import { extractResumeSkills } from "./resumeText";
 import { buildSkillTerms } from "./skillTags";
 import { persistDiscoveredJob, scalePrerank } from "./persist";
 import { matchJobToResume } from "./match";
+import {
+  getUserDealBreakers,
+  getWithdrawnStatusId,
+} from "@/lib/jobs/dealBreakers";
 import { finalizeRun } from "./finalize";
 
 export async function runAtsRun(
@@ -283,6 +287,12 @@ export async function runAtsRun(
     const modelName =
       aiSettings.model || getDefaultModelForProvider(aiSettings.provider);
     const limit = getAutomationMatchLimit(aiSettings.provider);
+    const dealBreakerSettings = await getUserDealBreakers(automation.userId);
+    const withdrawnStatusId =
+      dealBreakerSettings.withdraw && dealBreakerSettings.items.length > 0
+        ? await getWithdrawnStatusId()
+        : null;
+    let dealBroken = 0;
 
     let jobsSaved = 0;
     let jobsTagged = 0;
@@ -385,6 +395,7 @@ export async function runAtsRun(
         aiSettings,
         automation.userId,
         signal,
+        dealBreakerSettings.items,
       );
 
       // Abort may have fired mid-call; bail before saving this job. This
@@ -413,13 +424,22 @@ export async function runAtsRun(
 
       analyzed++;
       const isStrong = matchResult.score >= automation.matchThreshold;
-      if (isStrong) highlighted++;
+      const found = matchResult.dealBreakers?.found ?? [];
+      // A strong match with a deal breaker is saved straight to Withdrawn so
+      // it stays visible (and is never re-discovered) but is not highlighted.
+      const withdraw = isStrong && found.length > 0 && !!withdrawnStatusId;
+      if (withdraw) dealBroken++;
+      else if (isStrong) highlighted++;
       else belowThreshold++;
 
+      const dealNote =
+        found.length > 0
+          ? ` — deal breaker: ${found.join(", ")}${withdraw ? " (saved as Withdrawn)" : ""}`
+          : "";
       automationLogger.log(
         automation.id,
-        isStrong ? "success" : "info",
-        `${label} Analyzed ${analyzed}/${totalToAnalyze}: ${scored.job.title} — ${matchResult.score}%${isStrong ? "" : ` (below ${automation.matchThreshold}% threshold — not saved)`}`,
+        isStrong && !withdraw ? "success" : found.length > 0 ? "warning" : "info",
+        `${label} Analyzed ${analyzed}/${totalToAnalyze}: ${scored.job.title} — ${matchResult.score}%${isStrong ? "" : ` (below ${automation.matchThreshold}% threshold — not saved)`}${dealNote}`,
         { score: matchResult.score, threshold: automation.matchThreshold },
       );
 
@@ -432,6 +452,9 @@ export async function runAtsRun(
           matchResult.score,
           {
             ...matchResult.data,
+            ...(withdraw && matchResult.dealBreakers
+              ? { dealBreakers: { ...matchResult.dealBreakers, withdrawn: true } }
+              : {}),
             resumeId: resume.id,
             resumeTitle: resume.title,
             matchedAt: new Date().toISOString(),
@@ -442,6 +465,7 @@ export async function runAtsRun(
             analyzed: true,
           },
           skillTerms,
+          withdraw ? withdrawnStatusId! : undefined,
         );
         if (saved) {
           jobsSaved++;
@@ -479,6 +503,14 @@ export async function runAtsRun(
         automation.id,
         "info",
         `${label} ${belowThreshold} analyzed job(s) scored below your ${automation.matchThreshold}% threshold and were not saved`,
+      );
+    }
+
+    if (dealBroken > 0) {
+      automationLogger.log(
+        automation.id,
+        "info",
+        `${label} ${dealBroken} strong match(es) hit a deal breaker and were saved as Withdrawn`,
       );
     }
 

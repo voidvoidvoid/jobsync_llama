@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import AiSettings from "@/components/settings/AiSettings";
 import ApiKeySettings from "@/components/settings/ApiKeySettings";
 import DataSettings from "@/components/settings/DataSettings";
+import DealBreakerSettings from "@/components/settings/DealBreakerSettings";
 import DisplaySettings from "@/components/settings/DisplaySettings";
 import McpAccessSettings from "@/components/settings/McpAccessSettings";
 import SettingsSidebar, { type SettingsSection } from "@/components/settings/SettingsSidebar";
@@ -12,6 +13,7 @@ import SettingsSidebar, { type SettingsSection } from "@/components/settings/Set
 const SECTIONS: SettingsSection[] = [
   "ai-provider",
   "api-keys",
+  "deal-breakers",
   "appearance",
   "mcp-access",
   "data",
@@ -45,6 +47,7 @@ function SettingsContent() {
         <div className="flex-1 min-w-0">
           {activeSection === "ai-provider" && <AiSettings />}
           {activeSection === "api-keys" && <ApiKeySettings />}
+          {activeSection === "deal-breakers" && <DealBreakerSettings />}
           {activeSection === "appearance" && <DisplaySettings />}
           {activeSection === "mcp-access" && <McpAccessSettings />}
           {activeSection === "data" && <DataSettings />}

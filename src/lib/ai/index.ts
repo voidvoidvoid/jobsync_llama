@@ -5,6 +5,12 @@ export type {
   JobMatchData,
 } from "@/models/ai.schemas";
 export { parseJobMatch } from "./jobMatch/parse";
+export {
+  withDealBreakers,
+  resolveDealBreakers,
+  dealBreakersFromMatchData,
+  DEAL_BREAKERS_SECTION,
+} from "./dealBreakers";
 
 // Prompts
 export {

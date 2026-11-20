@@ -26,6 +26,10 @@ vi.mock("ai", () => ({ generateText: vi.fn() }));
 vi.mock("@/lib/notifications/record", () => ({
   recordRunNotifications: vi.fn(),
 }));
+vi.mock("@/lib/jobs/dealBreakers", async (orig) => ({
+  ...(await (orig() as Promise<Record<string, unknown>>)),
+  withdrawForDealBreakers: vi.fn(async () => true),
+}));
 vi.mock("@/lib/aiUsage/tracker", () => ({
   startAiCall: () => ({ finish: vi.fn() }),
 }));
@@ -50,6 +54,7 @@ vi.mock("@/lib/ai", async (orig) => {
 import { runAutomation } from "@/lib/scraper/runner";
 import { generateText } from "ai";
 import { recordRunNotifications } from "@/lib/notifications/record";
+import { withdrawForDealBreakers } from "@/lib/jobs/dealBreakers";
 import { unmatchedJobsWhere, CLOSED_STATUSES } from "@/lib/jobs/unmatched";
 import type { Automation } from "@/models/automation.model";
 
@@ -283,5 +288,37 @@ describe("runAutomation (ai-match)", () => {
     expect(result.status).toBe("completed");
     expect(prisma.job.findMany).not.toHaveBeenCalled();
     expect(generateText).not.toHaveBeenCalled();
+  });
+
+  it("checks deal breakers, records them and withdraws the job", async () => {
+    (prisma.userSettings.findUnique as any).mockResolvedValue({
+      settings: JSON.stringify({
+        dealBreakers: { items: ["occasional travel", "relocation"], withdraw: true },
+      }),
+    });
+    (prisma.job.count as any).mockResolvedValue(1);
+    (prisma.job.findMany as any).mockResolvedValue([job("a")]);
+    (generateText as any).mockResolvedValue({
+      text: "SCORES: match=88 recommendation=strong\nDEAL_BREAKERS: 1\n\n## Summary\nGood.",
+      usage: {},
+      finishReason: "stop",
+    });
+
+    await runAutomation(automation());
+
+    const call = (generateText as any).mock.calls[0][0];
+    expect(call.instructions).toContain('1. "occasional travel"');
+    const write = (prisma.job.updateMany as any).mock.calls[0][0];
+    const data = JSON.parse(write.data.matchData);
+    expect(data.dealBreakers).toEqual({
+      checked: ["occasional travel", "relocation"],
+      found: ["occasional travel"],
+    });
+    expect(data.body).toBe("## Summary\nGood.");
+    expect(withdrawForDealBreakers).toHaveBeenCalledWith(
+      expect.objectContaining({ jobId: "a", userId: "user1" }),
+    );
+    // A deal-broken job is not counted as a strong match
+    expect(finalized()).toMatchObject({ jobsProcessed: 1, jobsMatched: 0 });
   });
 });

@@ -11,6 +11,10 @@ import {
   buildJobMatchPrompt,
 } from "@/lib/ai/prompts/job-match";
 
+vi.mock("@/lib/jobs/dealBreakers", () => ({
+  getUserDealBreakers: vi.fn(async () => ({ items: [], withdraw: true })),
+  withdrawForDealBreakers: vi.fn(async () => false),
+}));
 vi.mock("@/lib/agent/jobLookup", () => ({ resolveJobForAgent: vi.fn() }));
 vi.mock("@/lib/agent/resumeLookup", () => ({ resolveResumeForAgent: vi.fn() }));
 vi.mock("@/lib/ai/tools/preprocessing", () => ({ preprocessResume: vi.fn() }));

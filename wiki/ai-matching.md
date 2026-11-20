@@ -33,6 +33,8 @@ Create an automation and choose **AI Matching (score saved jobs)** as the job bo
 
 The threshold step sets **Strong match at**: jobs scoring at or above it are counted as strong matches in the run summary. Every score is saved either way, and nothing is removed or hidden. The schedule works as for any automation, one automation per hour of the day.
 
+Each match also checks the job against your [Deal Breakers](./deal-breakers.md); a job that has one is flagged, moved to Withdrawn if it is still New or Draft, and not counted as strong.
+
 A job whose description is too short to judge is skipped without taking a place in the run, so it never blocks the jobs behind it.
 
 ## How do I see what a run did?

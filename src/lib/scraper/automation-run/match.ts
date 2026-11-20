@@ -6,9 +6,11 @@ import {
   buildAutomationJobMatchPrompt,
   removeHtmlTags,
 } from "@/lib/ai";
+import { resolveDealBreakers, withDealBreakers } from "@/lib/ai/dealBreakers";
 import { APP_CONSTANTS } from "@/lib/constants";
 import type { JobBoard } from "@/models/automation.model";
 import type { AiSettings } from "@/models/userSettings.model";
+import type { JobMatchDealBreakers } from "@/models/ai.schemas";
 import {
   genAiRequestAttrs,
   genAiResponseAttrs,
@@ -27,6 +29,7 @@ export interface MatchResult {
   success: boolean;
   score: number;
   data?: object;
+  dealBreakers?: JobMatchDealBreakers;
   error?: string;
 }
 
@@ -37,8 +40,13 @@ export async function matchJobToResume(
   aiSettings: AiSettings,
   userId: string,
   signal?: AbortSignal,
+  dealBreakerItems: string[] = [],
 ): Promise<MatchResult> {
   try {
+    const system = withDealBreakers(
+      AUTOMATION_JOB_MATCH_SYSTEM_PROMPT,
+      dealBreakerItems,
+    );
     const resumeText = await convertResumeForMatch(resume);
     const jobText = `
 Title: ${job.title}
@@ -65,7 +73,7 @@ ${removeHtmlTags(job.description)}
           temperature: 0.3,
           numCtx: APP_CONSTANTS.AI_OLLAMA_NUM_CTX,
           surface: SURFACES.AUTOMATION_MATCH,
-          system: AUTOMATION_JOB_MATCH_SYSTEM_PROMPT,
+          system,
           prompt: promptText,
         }),
         ...inputSizeAttrs({
@@ -87,7 +95,7 @@ ${removeHtmlTags(job.description)}
         try {
           generated = await generateText({
             model,
-            instructions: AUTOMATION_JOB_MATCH_SYSTEM_PROMPT,
+            instructions: system,
             prompt: promptText,
             temperature: 0.3,
             abortSignal: signal,
@@ -111,11 +119,12 @@ ${removeHtmlTags(job.description)}
       },
     );
 
-    const { scores, body } = parseJobMatch(result.text);
+    const { scores, body, dealBreakerHits } = parseJobMatch(result.text);
     if (!scores) {
       return { success: false, score: 0, error: "No match data returned" };
     }
 
+    const dealBreakers = resolveDealBreakers(dealBreakerItems, dealBreakerHits);
     return {
       success: true,
       score: scores.matchScore,
@@ -123,7 +132,9 @@ ${removeHtmlTags(job.description)}
         matchScore: scores.matchScore,
         recommendation: scores.recommendation,
         body,
+        ...(dealBreakers ? { dealBreakers } : {}),
       },
+      dealBreakers,
     };
   } catch (error) {
     if (signal?.aborted || (error instanceof Error && error.name === "AbortError")) {

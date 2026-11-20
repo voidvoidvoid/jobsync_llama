@@ -388,6 +388,59 @@ describe("runAutomation (lever)", () => {
     expect((prisma.job.create as any).mock.calls.length).toBe(0);
   });
 
+  it("saves a strong match with a deal breaker straight to Withdrawn", async () => {
+    (prisma.userSettings.findUnique as any).mockResolvedValue({
+      settings: JSON.stringify({
+        dealBreakers: { items: ["must be willing to relocate"], withdraw: true },
+      }),
+    });
+    (prisma.jobStatus.findFirst as any).mockImplementation(async ({ where }: any) =>
+      where.value === "withdrawn" ? { id: "st-withdrawn" } : { id: "st" },
+    );
+    (searchLeverJobs as any).mockResolvedValue({
+      jobs: [makeJob("Frontend Engineer", "React")],
+      errors: [],
+    });
+    (generateText as any).mockResolvedValue({
+      text: "SCORES: match=90 recommendation=strong\nDEAL_BREAKERS: 1\n\n## Summary\nGreat fit",
+    });
+
+    const result = await runAutomation(leverAutomation);
+
+    expect((generateText as any).mock.calls[0][0].instructions).toContain(
+      '1. "must be willing to relocate"',
+    );
+    const createArg = (prisma.job.create as any).mock.calls[0][0];
+    expect(createArg.data.statusId).toBe("st-withdrawn");
+    expect(JSON.parse(createArg.data.matchData).dealBreakers).toEqual({
+      checked: ["must be willing to relocate"],
+      found: ["must be willing to relocate"],
+      withdrawn: true,
+    });
+    expect(result.jobsSaved).toBe(1);
+    expect(result.jobsMatched).toBe(0);
+  });
+
+  it("flags but keeps a deal-broken match as New when withdrawing is off", async () => {
+    (prisma.userSettings.findUnique as any).mockResolvedValue({
+      settings: JSON.stringify({ dealBreakers: { items: ["travel"], withdraw: false } }),
+    });
+    (searchLeverJobs as any).mockResolvedValue({
+      jobs: [makeJob("Frontend Engineer", "React")],
+      errors: [],
+    });
+    (generateText as any).mockResolvedValue({
+      text: "SCORES: match=90 recommendation=strong\nDEAL_BREAKERS: 1\n\n## Summary\nGreat fit",
+    });
+
+    const result = await runAutomation(leverAutomation);
+
+    const createArg = (prisma.job.create as any).mock.calls[0][0];
+    expect(createArg.data.statusId).toBe("st");
+    expect(JSON.parse(createArg.data.matchData).dealBreakers.found).toEqual(["travel"]);
+    expect(result.jobsMatched).toBe(1);
+  });
+
   it("persists Lever's workplaceType through to the job record", async () => {
     (searchLeverJobs as any).mockResolvedValue({
       jobs: [makeJob("Frontend Engineer", "React", { workplaceType: "HYBRID" })],

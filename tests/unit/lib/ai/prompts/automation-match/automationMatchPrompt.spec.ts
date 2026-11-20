@@ -18,7 +18,7 @@ describe("AUTOMATION_JOB_MATCH_SYSTEM_PROMPT", () => {
       "## Skills",
       "## Experience",
       "## Keywords",
-      "## Deal Breakers",
+      "## Critical Gaps",
       "## Tailoring Tips",
     ];
     for (const section of fullSections) {

@@ -13,6 +13,11 @@ import {
   buildJobMatchPrompt,
 } from "@/lib/ai/prompts/job-match";
 import { parseJobMatch } from "@/lib/ai/jobMatch/parse";
+import { resolveDealBreakers, withDealBreakers } from "@/lib/ai/dealBreakers";
+import {
+  getUserDealBreakers,
+  withdrawForDealBreakers,
+} from "@/lib/jobs/dealBreakers";
 import { saveJobMatchResult } from "@/actions/job.actions";
 import {
   runNestedGeneration,
@@ -84,10 +89,11 @@ export function buildMatchJobTool(ctx: MatchJobContext) {
         };
       }
 
+      const dealBreakerSettings = await getUserDealBreakers(ctx.userId);
       const generation = await runNestedGeneration({
         model: ctx.model,
         userId: ctx.userId,
-        system: JOB_MATCH_SYSTEM_PROMPT,
+        system: withDealBreakers(JOB_MATCH_SYSTEM_PROMPT, dealBreakerSettings.items),
         prompt: buildJobMatchPrompt(
           resumePre.data.normalizedText,
           jobPre.data.normalizedText,
@@ -129,7 +135,7 @@ export function buildMatchJobTool(ctx: MatchJobContext) {
         };
       }
 
-      const { scores, body } = parseJobMatch(generation.text);
+      const { scores, body, dealBreakerHits } = parseJobMatch(generation.text);
       // matchData is overwrite-only with no history, so an unscored or
       // half-finished generation must not be written.
       if (!scores) {
@@ -140,9 +146,14 @@ export function buildMatchJobTool(ctx: MatchJobContext) {
         };
       }
 
+      const dealBreakers = resolveDealBreakers(
+        dealBreakerSettings.items,
+        dealBreakerHits,
+      );
       const matchData: JobMatchData = {
         ...scores,
         body,
+        ...(dealBreakers ? { dealBreakers } : {}),
         resumeId: resume.id!,
         resumeTitle: resume.title,
         matchedAt: new Date().toISOString(),
@@ -156,6 +167,14 @@ export function buildMatchJobTool(ctx: MatchJobContext) {
         JSON.stringify(matchData),
       );
       const saved = saveResult?.success === true;
+      const withdrawn = saved
+        ? await withdrawForDealBreakers({
+            jobId: job.id!,
+            userId: ctx.userId,
+            dealBreakers,
+            settings: dealBreakerSettings,
+          })
+        : false;
 
       return {
         status: "ok",
@@ -166,6 +185,8 @@ export function buildMatchJobTool(ctx: MatchJobContext) {
         resumeTitle: resume.title,
         scores,
         body,
+        dealBreakersFound: dealBreakers?.found ?? [],
+        withdrawn,
         saved,
         saveError: saved ? undefined : (saveResult?.message ?? "The match could not be saved."),
       };

@@ -7,6 +7,8 @@ import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { TipTapContentViewer } from "@/components/TipTapContentViewer";
 import type { JobMatchData } from "@/models/ai.schemas";
+import { dealBreakersFromMatchData } from "@/lib/ai/dealBreakers";
+import { DealBreakerNotice } from "./DealBreakerNotice";
 
 // html:false escapes any raw HTML in the model output; TipTapContentViewer
 // further strips unrecognized tags, so the rendered analysis is safe.
@@ -28,9 +30,11 @@ export function MatchDetails({ matchData, discoveredAt }: MatchDetailsProps) {
   const html = useMemo(() => (body ? md.render(body) : ""), [body]);
 
   if (!matchData) return null;
+  const dealBreakers = dealBreakersFromMatchData(matchData);
 
   return (
     <div className="space-y-3">
+      <DealBreakerNotice dealBreakers={dealBreakers} />
       <div className="flex flex-wrap items-center gap-2">
         {matchData.recommendation && (
           <Badge variant="outline" className="capitalize">

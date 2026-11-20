@@ -122,6 +122,10 @@ export type AgentMatchJobResult =
       resumeTitle: string;
       scores: JobMatchScores;
       body: string;
+      // The user's deal breakers the job description contains, if any
+      dealBreakersFound?: string[];
+      // True when a deal breaker moved the job to Withdrawn
+      withdrawn?: boolean;
       saved: boolean;
       saveError?: string;
     }

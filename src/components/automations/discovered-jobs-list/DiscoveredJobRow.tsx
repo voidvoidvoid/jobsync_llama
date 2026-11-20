@@ -17,6 +17,7 @@ import {
   Loader2,
   Sparkles,
 } from "lucide-react";
+import { DealBreakerFlag } from "../DealBreakerNotice";
 import type { DiscoveredJob } from "@/models/automation.model";
 import { getWorkplaceTypeLabel } from "@/models/job.model";
 import { isAnalyzed, getPrerankPercent } from "./matchData";
@@ -96,12 +97,15 @@ export function DiscoveredJobRow({
       </TableCell>
       <TableCell className="text-center">
         {analyzed ? (
-          <CircularScore
-            score={job.matchScore}
-            size="sm"
-            animate={false}
-            className="mx-auto"
-          />
+          <div className="flex flex-col items-center gap-1">
+            <CircularScore
+              score={job.matchScore}
+              size="sm"
+              animate={false}
+              className="mx-auto"
+            />
+            <DealBreakerFlag matchData={job.matchData} />
+          </div>
         ) : (
           <Button
             size="sm"

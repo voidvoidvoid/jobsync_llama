@@ -16,6 +16,7 @@ import {
   preprocessResume,
   preprocessJob,
 } from "@/lib/ai";
+import { resolveDealBreakers, withDealBreakers } from "@/lib/ai/dealBreakers";
 import {
   aiMatchConfig,
   type Automation,
@@ -29,6 +30,10 @@ import {
   getDefaultModelForProvider,
   getUserAiSettings,
 } from "./aiSettings";
+import {
+  getUserDealBreakers,
+  withdrawForDealBreakers,
+} from "@/lib/jobs/dealBreakers";
 
 const LABEL = "[AI Matching]";
 
@@ -241,6 +246,11 @@ export async function runAiMatchRun(
       aiSettings.model || getDefaultModelForProvider(aiSettings.provider);
     const model = await getModel(aiSettings.provider, modelName, automation.userId);
     const limit = getAutomationMatchLimit(aiSettings.provider);
+    const dealBreakerSettings = await getUserDealBreakers(automation.userId);
+    const system = withDealBreakers(
+      JOB_MATCH_SYSTEM_PROMPT,
+      dealBreakerSettings.items,
+    );
 
     automationLogger.log(
       automation.id,
@@ -250,6 +260,8 @@ export async function runAiMatchRun(
 
     let scored = 0;
     let strong = 0;
+    let dealBroken = 0;
+    let withdrawnCount = 0;
     let failed = 0;
     let alreadyScored = 0;
     let aiError: string | null = null;
@@ -268,7 +280,7 @@ export async function runAiMatchRun(
       try {
         const generated = await generateText({
           model,
-          instructions: JOB_MATCH_SYSTEM_PROMPT,
+          instructions: system,
           prompt: buildJobMatchPrompt(rText, jobText),
           temperature: 0.3,
           abortSignal: signal,
@@ -295,7 +307,7 @@ export async function runAiMatchRun(
       }
       if (signal?.aborted) return;
 
-      const { scores, body } = parseJobMatch(text);
+      const { scores, body, dealBreakerHits } = parseJobMatch(text);
       if (!scores) {
         failed++;
         automationLogger.log(
@@ -310,8 +322,14 @@ export async function runAiMatchRun(
       try {
         previous = JSON.parse(job.matchData ?? "{}");
       } catch {}
+      delete previous.dealBreakers;
+      const dealBreakers = resolveDealBreakers(
+        dealBreakerSettings.items,
+        dealBreakerHits,
+      );
       const matchData = JSON.stringify({
         ...previous,
+        ...(dealBreakers ? { dealBreakers } : {}),
         ...scores,
         body,
         resumeId: resume.id,
@@ -339,12 +357,26 @@ export async function runAiMatchRun(
       }
 
       scored++;
-      const isStrong = scores.matchScore >= automation.matchThreshold;
+      const found = dealBreakers?.found ?? [];
+      const withdrawn = await withdrawForDealBreakers({
+        jobId: job.id,
+        userId: automation.userId,
+        dealBreakers,
+        settings: dealBreakerSettings,
+      });
+      if (found.length > 0) dealBroken++;
+      if (withdrawn) withdrawnCount++;
+      const isStrong =
+        scores.matchScore >= automation.matchThreshold && found.length === 0;
       if (isStrong) strong++;
+      const dealNote =
+        found.length > 0
+          ? ` — deal breaker: ${found.join(", ")}${withdrawn ? " (moved to Withdrawn)" : ""}`
+          : "";
       automationLogger.log(
         automation.id,
-        isStrong ? "success" : "info",
-        `${LABEL} Scored ${scored}/${selected.length}: ${title} — ${scores.matchScore}%`,
+        isStrong ? "success" : found.length > 0 ? "warning" : "info",
+        `${LABEL} Scored ${scored}/${selected.length}: ${title} — ${scores.matchScore}%${dealNote}`,
         { score: scores.matchScore, threshold: automation.matchThreshold },
       );
     };
@@ -359,6 +391,13 @@ export async function runAiMatchRun(
         automation.id,
         "info",
         `${LABEL} ${alreadyScored} job(s) were scored elsewhere during the run and left as they were`,
+      );
+    }
+    if (dealBroken > 0) {
+      automationLogger.log(
+        automation.id,
+        "info",
+        `${LABEL} ${dealBroken} job(s) hit a deal breaker${withdrawnCount > 0 ? `; ${withdrawnCount} moved to Withdrawn` : ""}`,
       );
     }
     const left = Math.max(0, totalUnmatched - scored - alreadyScored);

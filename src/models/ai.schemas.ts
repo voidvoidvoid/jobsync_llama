@@ -45,6 +45,18 @@ export type JobMatchScores = {
 export type JobMatchResult = {
   scores?: JobMatchScores;
   body: string;
+  // 1-based numbers from the DEAL_BREAKERS line; undefined when the line is
+  // absent (no deal breakers were asked for, or the model skipped it).
+  dealBreakerHits?: number[];
+};
+
+// What a match checked for and what it found. found is a subset of checked,
+// in the user's own wording. withdrawn marks that this match moved the job to
+// Withdrawn.
+export type JobMatchDealBreakers = {
+  checked: string[];
+  found: string[];
+  withdrawn?: boolean;
 };
 
 // Lexical pre-rank breakdown persisted next to the LLM verdict (tuning signal).
@@ -62,6 +74,7 @@ export type PrerankComponents = {
 // Persisted shape stored in Job.matchData (JSON string).
 export type JobMatchData = JobMatchScores & {
   body: string;
+  dealBreakers?: JobMatchDealBreakers;
   resumeId?: string;
   resumeTitle?: string;
   matchedAt?: string;

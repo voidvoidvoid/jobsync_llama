@@ -4,6 +4,10 @@ import { getModel } from "@/lib/ai";
 import { startAiCall } from "@/lib/aiUsage/tracker";
 import { genAiRequestAttrs } from "@/lib/telemetry";
 
+vi.mock("@/lib/jobs/dealBreakers", () => ({
+  getUserDealBreakers: vi.fn(async () => ({ items: [], withdraw: true })),
+  withdrawForDealBreakers: vi.fn(async () => false),
+}));
 vi.mock("@/lib/db", () => ({
   default: {
     job: { findFirst: vi.fn(), update: vi.fn() },
@@ -92,6 +96,11 @@ describe("analyze discovered job model", () => {
     settings({ provider: "deepseek", model: "deepseek-reasoner" });
     const result = await analyzeDiscoveredJob("job-1");
     expect(getModel).toHaveBeenCalledWith("deepseek", "deepseek-reasoner", "user-1");
-    expect(result).toEqual({ success: true, matchScore: 80 });
+    expect(result).toEqual({
+      success: true,
+      matchScore: 80,
+      dealBreakersFound: [],
+      withdrawn: false,
+    });
   });
 });

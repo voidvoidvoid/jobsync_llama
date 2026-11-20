@@ -30,6 +30,8 @@ export async function persistDiscoveredJob(
   matchScore: number,
   matchData: object,
   skillTerms: SkillTerm[],
+  // Set when a deal breaker withdrew the job before it was ever saved.
+  statusIdOverride?: string,
 ): Promise<{ saved: boolean; tagsApplied: number }> {
   const scrapedJob: ScrapedJobData = {
     title: job.title,
@@ -51,6 +53,7 @@ export async function persistDiscoveredJob(
     matchData: JSON.stringify(matchData),
     skillTerms,
   });
+  if (statusIdOverride) jobRecord.statusId = statusIdOverride;
 
   const { stages, jobFields } = await initialTimelineForNewJob({
     statusId: jobRecord.statusId,

@@ -46,7 +46,7 @@ Level fit (overqualified / match / underqualified), years required vs. apparent,
 ## Keywords
 ATS view only: important JD keywords found, key keywords missing, and exact phrases to add verbatim to pass keyword screens.
 
-## Deal Breakers
+## Critical Gaps
 Critical missing requirements that may disqualify (mandatory certifications, licenses, etc.). If none, say so.
 
 ## Tailoring Tips

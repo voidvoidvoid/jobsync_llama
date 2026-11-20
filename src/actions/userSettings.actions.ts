@@ -7,6 +7,8 @@ import {
   defaultUserSettings,
   AiSettings,
   DisplaySettings,
+  DealBreakerSettings,
+  normalizeDealBreakers,
 } from "@/models/userSettings.model";
 
 export const getUserSettings = async (): Promise<any | undefined> => {
@@ -121,4 +123,10 @@ export const updateDisplaySettings = async (
   displaySettings: DisplaySettings
 ): Promise<any | undefined> => {
   return updateUserSettings({ display: displaySettings });
+};
+
+export const updateDealBreakerSettings = async (
+  dealBreakers: DealBreakerSettings,
+): Promise<any | undefined> => {
+  return updateUserSettings({ dealBreakers: normalizeDealBreakers(dealBreakers) });
 };

@@ -32,4 +32,4 @@ SCORES: match=<0-100> recommendation=<strong|good|partial|weak>
 
 Pick the recommendation token consistent with the match score (strong 80-100, good 65-79, partial 50-64, weak <50).
 
-Then a blank line, then a single "## Summary" section — 2-3 sentences covering overall fit, the biggest strength, and the main gap or action item. Do NOT output any other "##" sections (no Requirements, Skills, Experience, Keywords, Deal Breakers, or Tailoring Tips). Do NOT output JSON. Do NOT wrap the response in code fences. Be honest about gaps.`;
+Then a blank line, then a single "## Summary" section — 2-3 sentences covering overall fit, the biggest strength, and the main gap or action item. Do NOT output any other "##" sections (no Requirements, Skills, Experience, Keywords, Critical Gaps, or Tailoring Tips). Do NOT output JSON. Do NOT wrap the response in code fences. Be honest about gaps.`;

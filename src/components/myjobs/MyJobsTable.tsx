@@ -24,6 +24,7 @@ import { SortableTableHead } from "../SortableTableHead";
 import Link from "next/link";
 import { DeleteAlertDialog } from "../DeleteAlertDialog";
 import { CircularScore } from "@/components/CircularScore";
+import { DealBreakerFlag } from "@/components/automations/DealBreakerNotice";
 import { JobStatusBadgeMenu } from "./JobStatusBadgeMenu";
 import { TooltipProvider } from "../ui/tooltip";
 import { JobActionsMenu } from "./JobActionsMenu";
@@ -185,12 +186,15 @@ function MyJobsTable({
                 </TableCell>
                 <TableCell className="hidden md:table-cell text-center">
                   {job.matchScore != null ? (
-                    <CircularScore
-                      score={job.matchScore}
-                      size="sm"
-                      animate={false}
-                      className="mx-auto"
-                    />
+                    <div className="flex flex-col items-center gap-1">
+                      <CircularScore
+                        score={job.matchScore}
+                        size="sm"
+                        animate={false}
+                        className="mx-auto"
+                      />
+                      <DealBreakerFlag matchData={job.matchData} />
+                    </div>
                   ) : (
                     <MatchJobButton jobId={job.id} />
                   )}

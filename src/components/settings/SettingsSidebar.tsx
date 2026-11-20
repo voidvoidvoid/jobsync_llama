@@ -1,10 +1,16 @@
 "use client";
 
-import { Bot, Database, Key, Palette, Plug } from "lucide-react";
+import { Ban, Bot, Database, Key, Palette, Plug } from "lucide-react";
 import { Button } from "../ui/button";
 import { cn } from "@/lib/utils";
 
-export type SettingsSection = "ai-provider" | "api-keys" | "appearance" | "mcp-access" | "data";
+export type SettingsSection =
+  | "ai-provider"
+  | "api-keys"
+  | "deal-breakers"
+  | "appearance"
+  | "mcp-access"
+  | "data";
 
 const SETTINGS_SECTIONS: {
   id: SettingsSection;
@@ -13,6 +19,7 @@ const SETTINGS_SECTIONS: {
 }[] = [
   { id: "ai-provider", label: "AI Provider", icon: Bot },
   { id: "api-keys", label: "API Keys", icon: Key },
+  { id: "deal-breakers", label: "Deal Breakers", icon: Ban },
   { id: "appearance", label: "Appearance", icon: Palette },
   { id: "mcp-access", label: "MCP Access", icon: Plug },
   { id: "data", label: "Data", icon: Database },

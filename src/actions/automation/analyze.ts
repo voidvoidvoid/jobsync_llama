@@ -12,6 +12,7 @@ import {
   preprocessResume,
   preprocessJob,
 } from "@/lib/ai";
+import { resolveDealBreakers, withDealBreakers } from "@/lib/ai/dealBreakers";
 import { getResumeById } from "@/actions/profile.actions";
 import { getJobDetails } from "@/actions/job.actions";
 import { defaultUserSettings } from "@/models/userSettings.model";
@@ -26,6 +27,10 @@ import {
   withSpan,
 } from "@/lib/telemetry";
 import { formatError } from "./shared";
+import {
+  getUserDealBreakers,
+  withdrawForDealBreakers,
+} from "@/lib/jobs/dealBreakers";
 
 // Runs an on-demand LLM match for an un-analyzed discovered job using the
 // resume tied to its automation and the user's AI settings (no model picker —
@@ -33,6 +38,8 @@ import { formatError } from "./shared";
 export async function analyzeDiscoveredJob(jobId: string): Promise<{
   success: boolean;
   matchScore?: number;
+  dealBreakersFound?: string[];
+  withdrawn?: boolean;
   message?: string;
 }> {
   try {
@@ -87,6 +94,12 @@ export async function analyzeDiscoveredJob(jobId: string): Promise<{
     const modelName = ai.model || getDefaultModelForProvider(ai.provider);
     const model = await getModel(ai.provider, modelName, user.id);
 
+    const dealBreakerSettings = await getUserDealBreakers(user.id);
+    const system = withDealBreakers(
+      JOB_MATCH_SYSTEM_PROMPT,
+      dealBreakerSettings.items,
+    );
+
     const promptText = buildJobMatchPrompt(
       resumePre.data.normalizedText,
       jobPre.data.normalizedText,
@@ -101,7 +114,7 @@ export async function analyzeDiscoveredJob(jobId: string): Promise<{
           temperature: 0.3,
           numCtx: APP_CONSTANTS.AI_OLLAMA_NUM_CTX,
           surface: SURFACES.JOB_MATCH,
-          system: JOB_MATCH_SYSTEM_PROMPT,
+          system,
           prompt: promptText,
         }),
         ...inputSizeAttrs({
@@ -123,7 +136,7 @@ export async function analyzeDiscoveredJob(jobId: string): Promise<{
         try {
           generated = await generateText({
             model,
-            instructions: JOB_MATCH_SYSTEM_PROMPT,
+            instructions: system,
             prompt: promptText,
             temperature: 0.3,
           });
@@ -146,7 +159,7 @@ export async function analyzeDiscoveredJob(jobId: string): Promise<{
       },
     );
 
-    const { scores, body } = parseJobMatch(result.text);
+    const { scores, body, dealBreakerHits } = parseJobMatch(result.text);
     if (!scores) {
       return { success: false, message: "AI did not return a match score" };
     }
@@ -158,8 +171,16 @@ export async function analyzeDiscoveredJob(jobId: string): Promise<{
       previous = {};
     }
 
+    const dealBreakers = resolveDealBreakers(
+      dealBreakerSettings.items,
+      dealBreakerHits,
+    );
+    // A fresh check replaces the old one; with no list, the old one goes too.
+    delete previous.dealBreakers;
+
     const matchData = JSON.stringify({
       ...previous,
+      ...(dealBreakers ? { dealBreakers } : {}),
       matchScore: scores.matchScore,
       recommendation: scores.recommendation,
       body,
@@ -176,7 +197,19 @@ export async function analyzeDiscoveredJob(jobId: string): Promise<{
       data: { matchScore: scores.matchScore, matchData },
     });
 
-    return { success: true, matchScore: scores.matchScore };
+    const withdrawn = await withdrawForDealBreakers({
+      jobId,
+      userId: user.id,
+      dealBreakers,
+      settings: dealBreakerSettings,
+    });
+
+    return {
+      success: true,
+      matchScore: scores.matchScore,
+      dealBreakersFound: dealBreakers?.found ?? [],
+      withdrawn,
+    };
   } catch (error) {
     return formatError(error, "Failed to analyze discovered job");
   }

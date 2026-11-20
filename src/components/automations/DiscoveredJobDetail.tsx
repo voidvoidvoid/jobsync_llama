@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { toastSuccess, toastError } from "@/lib/toast";
+import { toastSuccess, toastError, toastInfo } from "@/lib/toast";
 import {
   Building2,
   MapPin,
@@ -63,7 +63,15 @@ export function DiscoveredJobDetail({
     try {
       const result = await analyzeDiscoveredJob(job.id);
       if (result.success) {
-        toastSuccess("AI match score is ready.", "Match analyzed");
+        const found = result.dealBreakersFound ?? [];
+        if (found.length > 0) {
+          toastInfo(
+            `${found.join(", ")}.${result.withdrawn ? " The job was moved to Withdrawn." : ""}`,
+            "Deal breaker found",
+          );
+        } else {
+          toastSuccess("AI match score is ready.", "Match analyzed");
+        }
         onOpenChange(false);
         onRefresh();
       } else {

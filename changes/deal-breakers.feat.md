@@ -1,0 +1,1 @@
+Add Deal Breakers: list conditions you will not accept (such as occasional travel or relocation) under Settings; every AI match checks the job description for them, flags the ones found, and moves New or Draft jobs to Withdrawn.

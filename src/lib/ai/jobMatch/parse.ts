@@ -14,6 +14,19 @@ import { stripThinking } from "@/lib/ai/stripThinking";
 const SCORES_RE =
   /SCORES:\s*match=(\d+)\s+recommendation=(strong|good|partial|weak)/i;
 
+// "DEAL_BREAKERS: 1, 3" or "DEAL_BREAKERS: none". Anchored to a line so a
+// mention inside prose is never read as the verdict.
+const DEAL_BREAKERS_RE = /^[ \t]*DEAL_BREAKERS:[ \t]*([^\n]*)$/im;
+
+function parseHits(value: string): number[] {
+  const hits = new Set<number>();
+  for (const token of value.match(/\d+/g) ?? []) {
+    const n = Number(token);
+    if (n >= 1) hits.add(n);
+  }
+  return [...hits].sort((a, b) => a - b);
+}
+
 const RECOMMENDATION_LABELS: Record<string, JobMatchRecommendation> = {
   strong: "strong match",
   good: "good match",
@@ -39,7 +52,19 @@ export function parseJobMatch(raw: string): JobMatchResult {
   let body = match
     ? text.replace(match[0], "")
     : text.replace(/^\s*SCORES:[^\n]*(\n|$)/i, "");
+  const dealMatch = body.match(DEAL_BREAKERS_RE);
+  let dealBreakerHits: number[] | undefined;
+  if (dealMatch) {
+    dealBreakerHits = parseHits(dealMatch[1]);
+    body = body.replace(dealMatch[0], "");
+  } else {
+    // Mid-stream the line may be only partly written; it is then the last,
+    // unterminated line (no m flag, so $ is end of input).
+    body = body.replace(/^\s*DEAL[_A-Z]*:?[^\n]*$/i, "");
+  }
   body = body.replace(/^\s+/, "");
 
-  return { scores, body };
+  return dealBreakerHits
+    ? { scores, body, dealBreakerHits }
+    : { scores, body };
 }
